@@ -18,6 +18,7 @@ ENABLED_USER_ID = 712946563508469832 # My user id
 BOT_LOG_CHANNEL_ID = 1208431780529578014
 VERIFIED_ROLE_NAME = "Verified"
 
+
 # Load existing message records
 try:
     with open(RECORDS_FILENAME, 'rb') as file:
@@ -132,6 +133,11 @@ async def on_ready():
     await bot.user.edit(username="Bernso")
     bot.loop.create_task(send_timed_message())
 
+
+@bot.command(help = "Sends my GitHub page")
+async def github(ctx):
+    ME = ctx.guild.get_member(712946563508469832)
+    await ctx.reply(f"{ME.mention}'s Github:\nhttps://github.com/Bernso")
 
 @bot.command(help="Use this command to verify")
 async def verify(ctx):
@@ -409,8 +415,8 @@ async def stop_big_text(ctx):
 # Define the !best command
 @bot.command(help="Assert superiority.")
 async def best(ctx):
-    member = ctx.guild.get_member(712946563508469832)
-    await ctx.reply(f"{member.mention} is DA GOAT")
+    ME = ctx.guild.get_member(712946563508469832)
+    await ctx.reply(f"{ME.mention} is DA GOAT")
 
 # Define the !website command
 @bot.command(help="Link to Bernso's website. \nITS A WIP OK?")
@@ -741,10 +747,7 @@ async def add_role(ctx, member: discord.Member, *roles):
 async def set_role_log_channel(ctx, channel: discord.TextChannel):
     # Check if the user invoking the command has the necessary permissions
     if ctx.author.guild_permissions.administrator:
-        # Save the channel ID to a database or file
-        # Replace this part with your preferred method of storing data
         channel_id = channel.id
-        # In this example, we're simply printing the channel ID
         print(f"Role log channel set to: {channel_id}")
         await ctx.send(f"Role log channel has been set to {channel.mention}")
     else:
