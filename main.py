@@ -8,7 +8,7 @@ import asyncio
 import traceback  
 import sys
 
-os.system('cls')
+#os.system('cls')
 
 
 load_dotenv()
@@ -52,9 +52,10 @@ async def send_timed_message():
     channel = bot.get_channel(1047658455172911116)
     while not bot.is_closed():
         # Send your message here
-        await channel.send("Welcome, this is my place where I experiment with my bot and try experimenting on things!")
+        await channel.send("Welcome, this is my place where I experiement with my bot and try experimenting on things!")
         # Wait for 1 hour (3600 seconds) 3 hours (10800)
         await asyncio.sleep(10800)
+
 
 
 class CustomHelpCommand(commands.HelpCommand):
@@ -116,6 +117,53 @@ class PaginationView(discord.ui.View):
 
 intents = discord.Intents.all()
 bot = commands.Bot(command_prefix='!', intents=intents, help_command=CustomHelpCommand())
+
+
+
+@bot.event
+async def on_ready():
+    print(f'{bot.user} is now running!')
+    
+    await bot.change_presence(status=discord.Status.dnd, activity=discord.Activity(type=discord.ActivityType.listening, name="Jumpstyle (1) Full"))
+    # Change bot avatar
+    with open('projectK.gif', 'rb') as f:
+        avatar_bytes = f.read()
+    await bot.user.edit(avatar=avatar_bytes)
+    await bot.user.edit(username="Bernso")
+    bot.loop.create_task(send_timed_message())
+
+
+@bot.command(help="Use this command to verify")
+async def verify(ctx):
+    user = ctx.author
+    verifiedrole = 1189910015415435324
+    unverifiedrole = 1189910014152941688
+    
+    print(f"Role ID: {verifiedrole} added to {user}")  # Logging system
+    if verifiedrole:
+        await user.add_roles(ctx.guild.get_role(verifiedrole))
+        await user.remove_roles(ctx.guild.get_role(unverifiedrole))
+        await ctx.reply("You have been verified!", ephemeral=True)  # Set ephemeral to True
+    else:
+        await ctx.reply("Verification failed, role not found.", ephemeral=True)  # Set ephemeral to True
+
+@bot.command(help = "Say the command and the bot will dm you a message, no parameters are needed.")
+async def dm_test(ctx):
+    chars = "QWERTYUIOPLKJHGFDSAZXCVBNMqwertyuiopasdfghjklzxcvbnm1234567890!@#$%^&*()_+-={[]};:/?.><,|~`"
+    user = ctx.author
+    await user.send("Hello Monkey!")
+    await user.send("https://tenor.com/view/monkey-freiza-dbs-dbz-gif-25933202")
+
+@bot.command(help = "The bot will randomly generate a password for you based on the length you requested.\n\nThe <special_chars> is boolean, it will be 'True' or 'False'.")
+async def password_gen(ctx, length: int, special_chars: bool):
+    user = ctx.author
+    chars = "QWERTYUIOPLKJHGFDSAZXCVBNMqwertyuiopasdfghjklzxcvbnm1234567890"
+    if special_chars:
+        chars += "!@#$%^&*()_+-={[]};:/?.><,|~`"
+    userpass = ''.join(random.choice(chars) for _ in range(length))
+    await user.send(f"Your password is:\n{userpass}")
+
+
 
 @bot.command()
 async def delete_role(ctx, role_name: str):
@@ -195,21 +243,6 @@ async def page_test(ctx: commands.Context):
     view = PaginationView(embeds)  # Pass the embeds as pages argument
     await view.start(ctx)
 
-@bot.event
-async def on_ready():
-    print(f'{bot.user} is now running!')
-    
-    await bot.change_presence(status=discord.Status.dnd, activity=discord.Activity(type=discord.ActivityType.listening, name="Jumpstyle (1) Full"))
-    # Change bot avatar
-    with open('projectK.gif', 'rb') as f:
-        avatar_bytes = f.read()
-    await bot.user.edit(avatar=avatar_bytes)
-    await bot.user.edit(username="Bernso")
-    bot.loop.create_task(send_timed_message())
-
-
-
-
 
 
 @bot.command(help = "Replies to your messag with a link to my linktree.")
@@ -263,14 +296,14 @@ async def vishwa_bestpicks(ctx):
     embed.add_field(name = "Anime", value = "Haikyuu", inline=False)
     embed.add_field(name = "Manga", value = "Blue Box", inline=False)
     embed.add_field(name = "Song", value = "Social Path - Stray Kids", inline=False)
-    embed.add_field(name = "K drama (Korean drama)", value = "The Glory", inline=False)
+    embed.add_field(name = "Kdrama (Korean drama)", value = "The Glory", inline=False)
 
     # Send the embedded message
     await ctx.send(embed=embed)
 
 
 
-@bot.command(help = "State whether you are black or white and the bot will put you in a race.")
+@bot.command(help = "State wheather you are black or white and the bot will put you in a race.")
 async def race(ctx, option=None):
     if option.lower() == "white":
         await ctx.send("You'd lose the race")
@@ -719,12 +752,13 @@ async def on_member_update(before, after):
         channel_id = 1208431780529578014  # Replace with the ID of your desired channel
         channel = bot.get_channel(channel_id)
         if channel:
-            embed = discord.Embed(title="Role Changes", color=discord.Color.blue())
             if added_roles:
                 for role in added_roles:
+                    embed = discord.Embed(title="Role Changes", color=discord.Color.green())
                     embed.add_field(name="Role Added", value=f"{moderator.mention} added role {role.mention} to {after.mention}", inline=False)
             if removed_roles:
                 for role in removed_roles:
+                    embed = discord.Embed(title="Role Changes", color=discord.Color.red())
                     embed.add_field(name="Role Removed", value=f"{moderator.mention} removed role {role.mention} from {after.mention}", inline=False)
             await channel.send(embed=embed)
 
