@@ -737,12 +737,13 @@ async def on_member_update(before, after):
         channel_id = 1208431780529578014  # Replace with the ID of your desired channel
         channel = bot.get_channel(channel_id)
         if channel:
-            embed = discord.Embed(title="Role Changes", color=discord.Color.blue())
             if added_roles:
                 for role in added_roles:
+                    embed = discord.Embed(title="Role Changes", color=discord.Color.green())
                     embed.add_field(name="Role Added", value=f"{moderator.mention} added role {role.mention} to {after.mention}", inline=False)
             if removed_roles:
                 for role in removed_roles:
+                    embed = discord.Embed(title="Role Changes", color=discord.Color.red())
                     embed.add_field(name="Role Removed", value=f"{moderator.mention} removed role {role.mention} from {after.mention}", inline=False)
             await channel.send(embed=embed)
 
