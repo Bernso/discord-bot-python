@@ -147,7 +147,7 @@ async def verify(ctx):
     else:
         await ctx.reply("Verification failed, role not found.", ephemeral=True)  # Set ephemeral to True
 
-@bot.command()
+@bot.command(help = "Say the command and the bot will dm you a message, no parameters are needed.")
 async def dm_test(ctx):
     user = ctx.author
     await user.send("Hello Monkey!")
