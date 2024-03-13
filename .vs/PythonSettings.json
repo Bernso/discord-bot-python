@@ -1,0 +1,4 @@
+{
+  "Interpreter": "discord-bot-env\\Scripts\\python.exe",
+  "TestFramework": "Pytest"
+}
