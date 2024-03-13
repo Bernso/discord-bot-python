@@ -422,6 +422,10 @@ async def website(ctx):
 async def monkeys(ctx):
     await ctx.reply("Like water melon and chicken")
 
+@bot.command(help = "Sends you @.berso's youtube channel.")
+async def ytchannel(ctx):
+    await ctx.reply("YouTube:\nhttps://www.youtube.com/@bernso2547")
+
 # Define the !formula1 command
 @bot.command(help="The only right opinion on Formula 1.")
 async def formula1(ctx):
