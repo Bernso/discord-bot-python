@@ -147,7 +147,11 @@ async def verify(ctx):
     else:
         await ctx.reply("Verification failed, role not found.", ephemeral=True)  # Set ephemeral to True
 
-
+@bot.command()
+async def dm_test(ctx):
+    user = ctx.author
+    await user.send("Hello Monkey!")
+    await user.send("https://tenor.com/view/monkey-freiza-dbs-dbz-gif-25933202")
 
 
 @bot.command()
