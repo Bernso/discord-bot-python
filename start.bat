@@ -1,4 +1,4 @@
-cd C:\Users\benws\Desktop\PythonStuff\discord-bot-python
+cd YOUR FILE PATH
 
 @echo off
 python startupMain.py
