@@ -301,7 +301,18 @@ async def vishwa_bestpicks(ctx):
     # Send the embedded message
     await ctx.send(embed=embed)
 
-
+@bot.command(help = "Will reply with a quote depending on how sent the command")
+async def quote(ctx):
+    author = str(ctx.author)
+    if author == "vboss890":
+        await ctx.reply('"An apple a day keeps anyone away if you throw it hard enough!"')
+    elif author == "kefayt_":
+        await ctx.reply('"Wake up with a stinky finger."')
+    elif author == ".bernso":
+        await ctx.reply("TBATE < World After The Fall")
+    else:
+        await ctx.reply("Dm @.bernso to get your own quote.")
+    
 
 @bot.command(help = "State wheather you are black or white and the bot will put you in a race.")
 async def race(ctx, option=None):
@@ -310,9 +321,9 @@ async def race(ctx, option=None):
     elif option.lower() == 'black':
         await ctx.send("You'd win the race")
     elif option == None:
-        await ctx.send("Invalid option. Available options: `black`, `white`")
+        await ctx.send("Invalid option, available options: `black`, `white`")
     else:
-        await ctx.send("Invalid option. Available options: `black`, `white`")
+        await ctx.send("Invalid option, available options: `black`, `white`")
 
 
 
