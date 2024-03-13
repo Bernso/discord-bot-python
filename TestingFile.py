@@ -149,9 +149,20 @@ async def verify(ctx):
 
 @bot.command(help = "Say the command and the bot will dm you a message, no parameters are needed.")
 async def dm_test(ctx):
+    chars = "QWERTYUIOPLKJHGFDSAZXCVBNMqwertyuiopasdfghjklzxcvbnm1234567890!@#$%^&*()_+-={[]};:/?.><,|~`"
     user = ctx.author
     await user.send("Hello Monkey!")
     await user.send("https://tenor.com/view/monkey-freiza-dbs-dbz-gif-25933202")
+
+@bot.command(help = "The bot will randomly generate a password for you based on the length you requested.\n\nThe <special_chars> is boolean, it will be 'True' or 'False'.")
+async def password_gen(ctx, length: int, special_chars: bool):
+    user = ctx.author
+    chars = "QWERTYUIOPLKJHGFDSAZXCVBNMqwertyuiopasdfghjklzxcvbnm1234567890"
+    if special_chars:
+        chars += "!@#$%^&*()_+-={[]};:/?.><,|~`"
+    userpass = ''.join(random.choice(chars) for _ in range(length))
+    await user.send(f"Your password is:\n{userpass}")
+
 
 
 @bot.command()
