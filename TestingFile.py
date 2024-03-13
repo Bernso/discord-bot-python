@@ -118,6 +118,21 @@ class PaginationView(discord.ui.View):
 intents = discord.Intents.all()
 bot = commands.Bot(command_prefix='!', intents=intents, help_command=CustomHelpCommand())
 
+
+
+@bot.event
+async def on_ready():
+    print(f'{bot.user} is now running!')
+    
+    await bot.change_presence(status=discord.Status.dnd, activity=discord.Activity(type=discord.ActivityType.listening, name="Jumpstyle (1) Full"))
+    # Change bot avatar
+    with open('projectK.gif', 'rb') as f:
+        avatar_bytes = f.read()
+    await bot.user.edit(avatar=avatar_bytes)
+    await bot.user.edit(username="Bernso")
+    bot.loop.create_task(send_timed_message())
+
+
 @bot.command(help="Use this command to verify")
 async def verify(ctx):
     user = ctx.author
@@ -212,21 +227,6 @@ async def page_test(ctx: commands.Context):
     embeds = [discord.Embed(title=f"Page {i}", description=f"Content for page {i}") for i in range(1, 6)]
     view = PaginationView(embeds)  # Pass the embeds as pages argument
     await view.start(ctx)
-
-@bot.event
-async def on_ready():
-    print(f'{bot.user} is now running!')
-    
-    await bot.change_presence(status=discord.Status.dnd, activity=discord.Activity(type=discord.ActivityType.listening, name="Jumpstyle (1) Full"))
-    # Change bot avatar
-    with open('projectK.gif', 'rb') as f:
-        avatar_bytes = f.read()
-    await bot.user.edit(avatar=avatar_bytes)
-    await bot.user.edit(username="Bernso")
-    bot.loop.create_task(send_timed_message())
-
-
-
 
 
 
