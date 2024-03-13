@@ -118,16 +118,21 @@ class PaginationView(discord.ui.View):
 intents = discord.Intents.all()
 bot = commands.Bot(command_prefix='!', intents=intents, help_command=CustomHelpCommand())
 
-@bot.command(help = "Use this command to verify")
-async def verify(self, interaction: discord.Interaction):
-    user = interaction.user
-    role = self.view.role_id  # assuming role_id is set correctly
-    print(f"Role ID: {role}")  # Logging system
-    if role:
-        await user.add_roles(user.guild.get_role(role))
-        await interaction.response.send_message("You have been verified!", ephemeral=True)
+@bot.command(help="Use this command to verify")
+async def verify(ctx):
+    user = ctx.author
+    verifiedrole = 1189910015415435324
+    unverifiedrole = 1189910014152941688
+    
+    print(f"Role ID: {verifiedrole} added to {user}")  # Logging system
+    if verifiedrole:
+        await user.add_roles(ctx.guild.get_role(verifiedrole))
+        await user.remove_roles(ctx.guild.get_role(unverifiedrole))
+        await ctx.reply("You have been verified!", ephemeral=True)  # Set ephemeral to True
     else:
-        await interaction.response.send_message("Verification failed, role not found.", ephemeral=True)
+        await ctx.reply("Verification failed, role not found.", ephemeral=True)  # Set ephemeral to True
+
+
 
 
 @bot.command()
