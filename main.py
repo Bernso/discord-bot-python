@@ -8,7 +8,7 @@ import asyncio
 import traceback  
 import sys
 
-#os.system('cls')
+os.system('cls')
 
 
 load_dotenv()
