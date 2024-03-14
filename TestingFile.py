@@ -133,19 +133,23 @@ async def on_ready():
     bot.loop.create_task(send_timed_message())
 
 
-@bot.command(help="Use this command to verify")
-async def verify(ctx):
-    user = ctx.author
-    verifiedrole = 1189910015415435324
-    unverifiedrole = 1189910014152941688
-    
-    print(f"Role ID: {verifiedrole} added to {user}")  # Logging system
-    if verifiedrole:
-        await user.add_roles(ctx.guild.get_role(verifiedrole))
-        await user.remove_roles(ctx.guild.get_role(unverifiedrole))
-        await ctx.reply("You have been verified!", ephemeral=True)  # Set ephemeral to True
-    else:
-        await ctx.reply("Verification failed, role not found.", ephemeral=True)  # Set ephemeral to True
+class Verification(discord.ui.View):
+    def __init__(self):
+        super().__init__(timeout = None)
+    @discord.ui.button(label="Verify",custom_id = "Verify",style = discord.ButtonStyle.success)
+    async def verify(self, interaction, button):
+        verified = 1189910015415435324
+        unverified = 1189910014152941688
+        user = interaction.user
+        if verified not in [y.id for y in user.roles]:
+            await user.remove_roles(user.guild.get_role(unverified))
+            await user.add_roles(user.guild.get_role(verified))
+            await user.send("You have been verified!")
+
+@bot.command()
+async def initialize(ctx):
+  embed = discord.Embed(title = "Verification", description = "Click below to verify.")
+  await ctx.send(embed = embed, view = Verification())
 
 @bot.command(help = "Say the command and the bot will dm you a message, no parameters are needed.")
 async def dm_test(ctx):
