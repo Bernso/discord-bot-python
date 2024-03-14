@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 import asyncio
 import traceback  
 import sys
+import subprocess
 
 os.system('cls')
 
@@ -132,20 +133,46 @@ async def on_ready():
     await bot.user.edit(username="Bernso")
     bot.loop.create_task(send_timed_message())
 
+@bot.command()
+async def run_file(ctx, file_name):
+    # Check if the file exists
+    if not os.path.exists(file_name):
+        await ctx.reply("File not found.")
+        return
 
-@bot.command(help="Use this command to verify")
-async def verify(ctx):
-    user = ctx.author
-    verifiedrole = 1189910015415435324
-    unverifiedrole = 1189910014152941688
-    
-    print(f"Role ID: {verifiedrole} added to {user}")  # Logging system
-    if verifiedrole:
-        await user.add_roles(ctx.guild.get_role(verifiedrole))
-        await user.remove_roles(ctx.guild.get_role(unverifiedrole))
-        await ctx.reply("You have been verified!", ephemeral=True)  # Set ephemeral to True
+    # Check if the file has a .py extension
+    if not file_name.endswith('.py'):
+        await ctx.reply("Only Python files (.py) can be executed.")
+        return
+
+    # Execute the Python file
+    try:
+        result = subprocess.run(['python', file_name],capture_output=True, text=True)
+        output = result.stdout.strip()
+        await ctx.reply(f"Output:\n```\n{output}\n```")
+    except Exception as e:
+        await ctx.reply(f"Error occurred: {str(e)}")
+
+class Verification(discord.ui.View):
+    def __init__(self):
+        super().__init__(timeout = None)
+    @discord.ui.button(label="Verify",custom_id = "Verify",style = discord.ButtonStyle.success)
+    async def verify(self, interaction, button):
+        verified = 1189910015415435324
+        unverified = 1189910014152941688
+        user = interaction.user
+        if verified not in [y.id for y in user.roles]:
+            await user.remove_roles(user.guild.get_role(unverified))
+            await user.add_roles(user.guild.get_role(verified))
+            await user.send("You have been verified!")
+
+@bot.command()
+async def start_verify(ctx):
+    if ctx.author.guild_permissions.administrator:
+        embed = discord.Embed(title = "Verification", description = "Click below to verify.")
+        await ctx.send(embed = embed, view = Verification())
     else:
-        await ctx.reply("Verification failed, role not found.", ephemeral=True)  # Set ephemeral to True
+        await ctx.reply("You cannot use this command. Required = Administrator")
 
 @bot.command(help = "Say the command and the bot will dm you a message, no parameters are needed.")
 async def dm_test(ctx):
@@ -663,24 +690,27 @@ async def send_console_embed(ctx):
 
     
 
-# Command to remove a role from a user
-@bot.command(help="Remove a specified role from a user.")
+@bot.command(help="Add roles to a selected user.")
 async def remove_role(ctx, member: discord.Member, *roles):
     # Check if the user invoking the command has the necessary permissions
     if ctx.author.guild_permissions.manage_roles:
         # Iterate over each role provided
         for role_name in roles:
-            # Check if the role exists in the server
-            role = discord.utils.get(ctx.guild.roles, name=role_name)
-            if role:
-                if role in member.roles:
-                    # If the member has the role, remove it
-                    await member.remove_roles(role)
-                    await ctx.send(f"Success")
-                else:
-                    await ctx.send(f"User does not have the role.")
+            # Check if the role name is 'all'
+            if role_name.lower() == 'all':
+                # If 'all' is specified, add all roles to the member
+                for role in ctx.guild.roles:
+                    if role != ctx.guild.default_role:  # Avoid adding the @everyone role
+                        await member.remove_roles(role)
+                await ctx.send(f"All available roles have been removed from {member.mention}")
             else:
-                await ctx.send(f"Please re-type the role name.")
+                # Check if the role exists in the server
+                role = discord.utils.get(ctx.guild.roles, name=role_name)
+                if role:
+                    await member.remove_roles(role)
+                    await ctx.send(f"Added role '{role_name}' to {member.mention}")
+                else:
+                    await ctx.send(f"Role '{role_name}' does not exist.")
     else:
         # If the user doesn't have the necessary permissions, reply with an error message
         await ctx.reply("You don't have permission to use this command.")
@@ -777,6 +807,30 @@ async def on_member_update(before, after):
                     embed.add_field(name="Role Removed", value=f"{moderator.mention} removed role {role.mention} from {after.mention}", inline=False)
             await channel.send(embed=embed)
 
+@bot.event
+async def on_guild_role_create(role):
+    # Get the moderator who created the role
+    moderator = role.guild.get_member(role.guild.owner_id)
+
+    # Log role creation in a specific channel
+    channel_id = 1208431780529578014  # Replace with the ID of your desired channel
+    channel = bot.get_channel(channel_id)
+    if channel:
+        embed = discord.Embed(title="Role Changes", color=discord.Color.green())
+        embed.add_field(name="Role Created", value=f"{moderator.mention} created role {role.mention}", inline=False)
+        await channel.send(embed=embed)
+
+@bot.event
+async def on_guild_role_delete(role):
+    
+    moderator = role.guild.get_member(role.guild.owner_id)
+    channel_id = 1208431780529578014 
+    channel = bot.get_channel(channel_id)
+    
+    if channel:
+        embed = discord.Embed(title="Role Changes", color=discord.Color.red())
+        embed.add_field(name="Role Deleted", value=f"{moderator.mention} deleted role '{role.name}'", inline=False)
+        await channel.send(embed=embed)
 
 
 
@@ -808,6 +862,22 @@ async def purge(ctx, amount: int):
         # If the user doesn't have the necessary permissions, reply with an error message
         await ctx.reply("You don't have permission to use this command.")
 
+@bot.command(help = "Makes you depressed")
+async def depression(ctx):
+    
+    role = discord.utils.get(ctx.guild.roles, name='depressed')
+    if role is None:
+        role = await ctx.guild.create_role(name='depressed', color=discord.Color.dark_gray())
+        await ctx.send(f"Created '{role}' role.")
+    
+    user = str(ctx.author)
+    if user == "kefayt_":
+        await ctx.reply("You can't make a depressed person depressed.")
+    
+    else:
+        await ctx.author.add_roles(role)
+        await ctx.reply(f"Role '{role}' added to you!")
+    
 # Error handling
 @bot.event
 async def on_command_error(ctx, error):
