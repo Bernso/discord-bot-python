@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 import asyncio
 import traceback  
 import sys
+import subprocess
 
 #os.system('cls')
 
@@ -132,6 +133,25 @@ async def on_ready():
     await bot.user.edit(username="Bernso")
     bot.loop.create_task(send_timed_message())
 
+@bot.command()
+async def run_file(ctx, file_name):
+    # Check if the file exists
+    if not os.path.exists(file_name):
+        await ctx.reply("File not found.")
+        return
+
+    # Check if the file has a .py extension
+    if not file_name.endswith('.py'):
+        await ctx.reply("Only Python files (.py) can be executed.")
+        return
+
+    # Execute the Python file
+    try:
+        result = subprocess.run(['python', file_name],capture_output=True, text=True)
+        output = result.stdout.strip()
+        await ctx.reply(f"Output:\n```\n{output}\n```")
+    except Exception as e:
+        await ctx.reply(f"Error occurred: {str(e)}")
 
 class Verification(discord.ui.View):
     def __init__(self):
