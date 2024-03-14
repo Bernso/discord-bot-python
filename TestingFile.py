@@ -147,9 +147,12 @@ class Verification(discord.ui.View):
             await user.send("You have been verified!")
 
 @bot.command()
-async def initialize(ctx):
-  embed = discord.Embed(title = "Verification", description = "Click below to verify.")
-  await ctx.send(embed = embed, view = Verification())
+async def start_verify(ctx):
+    if ctx.author.guild_permissions.administrator:
+        embed = discord.Embed(title = "Verification", description = "Click below to verify.")
+        await ctx.send(embed = embed, view = Verification())
+    else:
+        await ctx.reply("You cannot use this command. Required = Administrator")
 
 @bot.command(help = "Say the command and the bot will dm you a message, no parameters are needed.")
 async def dm_test(ctx):
@@ -667,24 +670,27 @@ async def send_console_embed(ctx):
 
     
 
-# Command to remove a role from a user
-@bot.command(help="Remove a specified role from a user.")
+@bot.command(help="Add roles to a selected user.")
 async def remove_role(ctx, member: discord.Member, *roles):
     # Check if the user invoking the command has the necessary permissions
     if ctx.author.guild_permissions.manage_roles:
         # Iterate over each role provided
         for role_name in roles:
-            # Check if the role exists in the server
-            role = discord.utils.get(ctx.guild.roles, name=role_name)
-            if role:
-                if role in member.roles:
-                    # If the member has the role, remove it
-                    await member.remove_roles(role)
-                    await ctx.send(f"Success")
-                else:
-                    await ctx.send(f"User does not have the role.")
+            # Check if the role name is 'all'
+            if role_name.lower() == 'all':
+                # If 'all' is specified, add all roles to the member
+                for role in ctx.guild.roles:
+                    if role != ctx.guild.default_role:  # Avoid adding the @everyone role
+                        await member.remove_roles(role)
+                await ctx.send(f"All available roles have been removed from {member.mention}")
             else:
-                await ctx.send(f"Please re-type the role name.")
+                # Check if the role exists in the server
+                role = discord.utils.get(ctx.guild.roles, name=role_name)
+                if role:
+                    await member.remove_roles(role)
+                    await ctx.send(f"Added role '{role_name}' to {member.mention}")
+                else:
+                    await ctx.send(f"Role '{role_name}' does not exist.")
     else:
         # If the user doesn't have the necessary permissions, reply with an error message
         await ctx.reply("You don't have permission to use this command.")
