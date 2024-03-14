@@ -777,6 +777,30 @@ async def on_member_update(before, after):
                     embed.add_field(name="Role Removed", value=f"{moderator.mention} removed role {role.mention} from {after.mention}", inline=False)
             await channel.send(embed=embed)
 
+@bot.event
+async def on_guild_role_create(role):
+    # Get the moderator who created the role
+    moderator = role.guild.get_member(role.guild.owner_id)
+
+    # Log role creation in a specific channel
+    channel_id = 1208431780529578014  # Replace with the ID of your desired channel
+    channel = bot.get_channel(channel_id)
+    if channel:
+        embed = discord.Embed(title="Role Changes", color=discord.Color.green())
+        embed.add_field(name="Role Created", value=f"{moderator.mention} created role {role.mention}", inline=False)
+        await channel.send(embed=embed)
+
+@bot.event
+async def on_guild_role_delete(role):
+    
+    moderator = role.guild.get_member(role.guild.owner_id)
+    channel_id = 1208431780529578014 
+    channel = bot.get_channel(channel_id)
+    
+    if channel:
+        embed = discord.Embed(title="Role Changes", color=discord.Color.red())
+        embed.add_field(name="Role Deleted", value=f"{moderator.mention} deleted role '{role.name}'", inline=False)
+        await channel.send(embed=embed)
 
 
 
@@ -808,6 +832,22 @@ async def purge(ctx, amount: int):
         # If the user doesn't have the necessary permissions, reply with an error message
         await ctx.reply("You don't have permission to use this command.")
 
+@bot.command(help = "Makes you depressed")
+async def depression(ctx):
+    
+    role = discord.utils.get(ctx.guild.roles, name='depressed')
+    if role is None:
+        role = await ctx.guild.create_role(name='depressed', color=discord.Color.dark_gray())
+        await ctx.send(f"Created '{role}' role.")
+    
+    user = str(ctx.author)
+    if user == "kefayt_":
+        await ctx.reply("You can't make a depressed person depressed.")
+    
+    else:
+        await ctx.author.add_roles(role)
+        await ctx.reply(f"Role '{role}' added to you!")
+    
 # Error handling
 @bot.event
 async def on_command_error(ctx, error):
