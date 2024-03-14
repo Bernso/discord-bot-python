@@ -1,0 +1,77 @@
+Metadata-Version: 2.1
+Name: vacefron.py
+Version: 2.0.3
+Summary: A Wrapper for vacefron.nl/api written in Python.
+Home-page: https://github.com/Soheab/vacefron.py
+Download-URL: https://github.com/Soheab/vacefron.py/archive/refs/tags/v2.0.3.tar.gz
+Author: Soheab
+License: MPL-2.0
+Project-URL: Discord, https://discord.gg/xJ2HRxZ
+Project-URL: Documentation, https://github.com/Soheab/vacefron.py/blob/master/docs.md
+Project-URL: Issue tracker, https://github.com/Soheab/vacefron.py/issues
+Keywords: vacefron,discord,api,wrapper,memes,image,discord.py,rankcard,rank,card,aiohttp,leveling
+Classifier: Development Status :: 5 - Production/Stable
+Classifier: Framework :: aiohttp
+Classifier: License :: OSI Approved :: Mozilla Public License 2.0 (MPL 2.0)
+Classifier: Natural Language :: English
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Topic :: Internet
+Classifier: Topic :: Software Development :: Libraries
+Classifier: Topic :: Software Development :: Libraries :: Python Modules
+Classifier: Topic :: Utilities
+Classifier: Typing :: Typed
+Requires-Python: >=3.8
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: aiohttp
+
+[![Downloads Total](https://pepy.tech/badge/vacefron-py)](https://pepy.tech/project/vacefron-py)
+[![Downloads Month](https://pepy.tech/badge/vacefron-py/month)](https://pepy.tech/project/vacefron-py)
+[![Downloads Week](https://pepy.tech/badge/vacefron-py/week)](https://pepy.tech/project/vacefron-py)
+[![PyPi Version](https://img.shields.io/pypi/v/vacefron.py.svg)](https://pypi.python.org/pypi/vacefron.py/)
+
+# VACEfron.py
+
+A Wrapper for [vacefron.nl/api][base_url] written in Python.
+
+## Requirements
+
+- Python 3.8 or above
+- aiohttp (python3 -m pip install -U aiohttp)
+
+## Installation
+
+Install the package by doing one of the following commands:
+
+**Using pip (recommended)**:
+
+- `pip install vacefron.py -U`
+- `python -m pip install vacefron.py -U`
+
+## Documentation
+
+See the full and detailed [docs here][docs]
+
+## Links
+
+[API][base_url] | [Changelogs][changelog] | [Github][github] | [PyPi][pypi]
+
+## Made by
+
+This wrapper is made by **Soheab_#6240**, DM me on Discord or join my server [here][discord_mine] for anything related to
+this wrapper.
+
+You can join VAC Efron's server [here][discord_vacefron] to suggest or report anything on the API.
+
+[docs]: https://github.com/Soheab/vacefron.py/blob/master/docs.md
+[changelog]: https://github.com/Soheab/vacefron.py/blob/master/changelog.md
+[base_url]: https://vacefron.nl/api/
+[github]: https://github.com/Soheab/vacefron.py
+[pypi]: https://pypi.org/project/vacefron.py/
+[discord_vacefron]: https://discord.gg/xJ2HRxZ
+[discord_mine]: https://discord.gg/yCzcfju
+
+

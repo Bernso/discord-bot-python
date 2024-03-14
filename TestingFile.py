@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 import asyncio
 import traceback  
 import sys
-import subprocess
+import sqlite3
 
 #os.system('cls')
 
@@ -115,7 +115,8 @@ class PaginationView(discord.ui.View):
         self.message = await ctx.send(embed=self.pages[self.current_page], view=self)
 
 
-
+con = sqlite3.connect('level.db')
+cur = con.cursor()
 intents = discord.Intents.all()
 bot = commands.Bot(command_prefix='!', intents=intents, help_command=CustomHelpCommand())
 
@@ -134,24 +135,62 @@ async def on_ready():
     bot.loop.create_task(send_timed_message())
 
 @bot.command()
-async def run_file(ctx, file_name):
-    # Check if the file exists
-    if not os.path.exists(file_name):
-        await ctx.reply("File not found.")
-        return
+async def init(ctx):
+    cur.execute(f'''CREATE TABLE IF NOT EXISTS GUILD_{ctx.guild.id} (user_id int NOT NULL, exp int DEFAULT 0, lvl int DEFAULT 0) ''')
 
-    # Check if the file has a .py extension
-    if not file_name.endswith('.py'):
-        await ctx.reply("Only Python files (.py) can be executed.")
-        return
+    for x in ctx.guild.members:
+        if not x.bot:
+            cur.execute(f"INSERT INTO GUILD_{ctx.guild.id} (user_id) VALUES ({x.id})")
 
-    # Execute the Python file
+    con.commit()
+
+    await ctx.channel.send("Leveling system initialized")
+
+@bot.command()
+async def editxp(ctx, user: discord.User, amount: int):
     try:
-        result = subprocess.run(['python', file_name],capture_output=True, text=True)
-        output = result.stdout.strip()
-        await ctx.reply(f"Output:\n```\n{output}\n```")
-    except Exception as e:
-        await ctx.reply(f"Error occurred: {str(e)}")
+        cur.execute(f"SELECT * FROM GUILD_{ctx.guild.id} WHERE user_id={user.id}")
+        result = cur.fetchone()
+
+        if result:
+            old_exp = result[1]
+            new_exp = max(0, old_exp + amount)  # Ensure the new XP is non-negative
+
+            # Calculate the level
+            level = (new_exp // 50) + 1
+            remaining_exp = new_exp % 50  # Calculate remaining XP for the current level
+
+            cur.execute(f"UPDATE GUILD_{ctx.guild.id} SET exp={new_exp} WHERE user_id={user.id}")
+            con.commit()
+
+            await ctx.send(f"Successfully edited {user.mention}'s XP. New XP: {remaining_exp} Level: {level}")
+        else:
+            await ctx.send("User not found in the database.")
+    except sqlite3.OperationalError as e:
+        await ctx.send("Database error occurred.")
+        print("SQLite Error:", e)
+
+@bot.command()
+async def xp(ctx, user: discord.User = None):
+    try:
+        if user is None:
+            user = ctx.author
+
+        cur.execute(f"SELECT * FROM GUILD_{ctx.guild.id} WHERE user_id={user.id}")
+        result = cur.fetchone()
+
+        if result is not None:
+            exp = result[1]
+            level = (exp // 50) + 1  # Calculate the level
+            remaining_exp = exp % 50  # Calculate remaining XP for the current level
+            await ctx.send(f"{user.mention} Exp: {remaining_exp} Level: {level}")
+        else:
+            await ctx.send("Hmm no such user in the db")
+    except sqlite3.OperationalError:
+        await ctx.send("Database not initialized")
+
+
+
 
 class Verification(discord.ui.View):
     def __init__(self):
@@ -190,7 +229,10 @@ async def password_gen(ctx, length: int, special_chars: bool):
     userpass = ''.join(random.choice(chars) for _ in range(length))
     await user.send(f"Your password is:\n{userpass}")
 
+@bot.command()
+async def ping(ctx):
 
+    await ctx.reply(f"Your ping is:   `{round(bot.latency*1000)} ms`")
 
 @bot.command()
 async def delete_role(ctx, role_name: str):
@@ -634,6 +676,21 @@ async def mute(ctx, member: discord.Member, duration: int):
 async def on_message(message: discord.Message) -> None:
     if message.author == bot.user:
         return
+    else:
+        try:
+            cur.execute(f"SELECT * FROM GUILD_{message.guild.id} WHERE user_id={message.author.id}")
+            result = cur.fetchone()
+
+            if result[1] == 99:
+                await message.channel.send(f"{message.author.mention} advanced to lvl {result[2] + 1}")
+                cur.execute(f"UPDATE GUILD_{message.guild.id} SET exp=0, lvl={result[2] + 1} WHERE user_id={message.author.id}")
+                con.commit()
+            else:
+                cur.execute(f"UPDATE GUILD_{message.guild.id} SET exp={result[1] + 1} WHERE user_id={message.author.id}")
+                con.commit()
+
+        except sqlite3.OperationalError:
+            pass
 
     # Record the message details
     message_record = {
@@ -666,6 +723,9 @@ async def on_message(message: discord.Message) -> None:
             await channel.send(content)
         else:
             print("Invalid channel ID")
+
+    
+    
 
 @bot.command(help="You'll be able to send messages through the console if you have the appropriate permissions")
 async def send_console_embed(ctx):
