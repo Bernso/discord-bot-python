@@ -1,5 +1,6 @@
 import discord
 from discord.ext import commands
+from discord import Embed
 import random
 import pickle
 import os
@@ -171,7 +172,7 @@ async def editxp(ctx, user: discord.User, amount: int):
         print("SQLite Error:", e)
 
 @bot.command()
-async def xp(ctx, user: discord.User = None):
+async def xp(ctx, user: discord.Member = None):
     try:
         if user is None:
             user = ctx.author
@@ -183,11 +184,20 @@ async def xp(ctx, user: discord.User = None):
             exp = result[1]
             level = (exp // 50) + 1  # Calculate the level
             remaining_exp = exp % 50  # Calculate remaining XP for the current level
-            await ctx.send(f"{user.mention} Exp: {remaining_exp} Level: {level}")
+
+            # Create an embedded message with user mention in the title
+            embed = Embed(title=f"{user.mention}'s Profile", color=discord.Color.green())
+            embed.set_thumbnail(url=user.avatar)
+            embed.add_field(name="XP", value=remaining_exp, inline=True)
+            embed.add_field(name="Level", value=level, inline=True)
+
+            await ctx.send(embed=embed)
         else:
-            await ctx.send("Hmm no such user in the db")
+            await ctx.send("Hmm no such user in the database")
     except sqlite3.OperationalError:
         await ctx.send("Database not initialized")
+
+
 
 
 
@@ -768,7 +778,7 @@ async def remove_role(ctx, member: discord.Member, *roles):
                 role = discord.utils.get(ctx.guild.roles, name=role_name)
                 if role:
                     await member.remove_roles(role)
-                    await ctx.send(f"Added role '{role_name}' to {member.mention}")
+                    await ctx.send(f"Removed role '{role_name}' from {member.mention}")
                 else:
                     await ctx.send(f"Role '{role_name}' does not exist.")
     else:
