@@ -7,4 +7,4 @@ If you see any out of place python files, they are most likely the files i added
 - Channel ID's
 - Role ID's
 - User ID's
-Because of all of this (i reccomend) you should create your own .env file to keep all of your data safe, especially your token.
+<p>Because of all of this (i reccomend) you should create your own .env file to keep all of your data safe, especially your token.</p>
