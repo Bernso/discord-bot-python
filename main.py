@@ -10,7 +10,7 @@ import traceback
 import sys
 import sqlite3
 
-os.system('cls')
+#os.system('cls')
 
 
 load_dotenv()
@@ -129,7 +129,7 @@ async def on_ready():
     print(f'{bot.user} is now running!')
     
     await bot.change_presence(status=discord.Status.dnd, activity=discord.Activity(type=discord.ActivityType.watching, name="Fate"))
-    # Change bot avatar
+    
     
     bot.loop.create_task(send_timed_message())
     channel = bot.get_channel(1208435912342511637)
@@ -171,7 +171,7 @@ async def level_up_notification(user, level, channel):
 
 
 @bot.command(help="Edit a user's experience.\n For the <amount> of xp you can use 'reset' to reset the user's XP.")
-async def editxp(ctx, user: discord.User, amount):
+async def editxp(ctx, user: discord.Member, amount):
     if ctx.author.guild_permissions.administrator:
         try:
             cur.execute(f"SELECT * FROM GUILD_{ctx.guild.id} WHERE user_id={user.id}")
@@ -204,6 +204,16 @@ async def editxp(ctx, user: discord.User, amount):
                     if level_up_channel:
                         await level_up_notification(user, new_level, level_up_channel)
 
+                    # Check if the new level is divisible by 5
+                    if new_level % 5 == 0:
+                        # Add role to the user for each 5 levels beneath the current level
+                        for i in range(new_level - 5, 0, -5):
+                            role_name = f"level-{i}"
+                            role = discord.utils.get(ctx.guild.roles, name=role_name)
+                            if not role:
+                                role = await ctx.guild.create_role(name=role_name)
+                            await user.add_roles(role)
+
                 # Create an embedded message to show changes
                 embed = discord.Embed(title="XP and Level Change", color=discord.Color.gold())
                 embed.set_thumbnail(url=user.avatar)
@@ -219,6 +229,11 @@ async def editxp(ctx, user: discord.User, amount):
             print("SQLite Error:", e)
     else:
         await ctx.reply("You do not have permission to use this command.")
+
+
+
+
+
 
 
 
