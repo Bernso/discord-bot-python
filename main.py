@@ -10,7 +10,7 @@ import traceback
 import sys
 import sqlite3
 
-#os.system('cls')
+os.system('cls')
 
 
 load_dotenv()
@@ -120,7 +120,7 @@ class PaginationView(discord.ui.View):
 con = sqlite3.connect('level.db')
 cur = con.cursor()
 intents = discord.Intents.all()
-bot = commands.Bot(command_prefix='!', intents=intents, help_command=CustomHelpCommand())
+bot = commands.Bot(command_prefix='.', intents=intents, help_command=CustomHelpCommand())
 
 
 
@@ -167,41 +167,43 @@ async def init(ctx):
 
 @bot.command(help="Edit a user's experience.")
 async def editxp(ctx, user: discord.User, amount: int):
-    try:
-        cur.execute(f"SELECT * FROM GUILD_{ctx.guild.id} WHERE user_id={user.id}")
-        result = cur.fetchone()
+    if ctx.author.guild_permissions.administrator:
+        try:
+            cur.execute(f"SELECT * FROM GUILD_{ctx.guild.id} WHERE user_id={user.id}")
+            result = cur.fetchone()
 
-        if result:
-            old_exp = result[1]
-            new_exp = max(0, old_exp + amount)  # Ensure the new XP is non-negative
+            if result:
+                old_exp = result[1]
+                new_exp = max(0, old_exp + amount)  # Ensure the new XP is non-negative
 
-            # Calculate the old and new levels
-            old_level = (old_exp // 50) + 1
-            new_level = (new_exp // 50) + 1
-            remaining_exp_old = old_exp % 50  # Calculate remaining XP for the current level (old)
-            remaining_exp_new = new_exp % 50  # Calculate remaining XP for the current level (new)
+                # Calculate the old and new levels
+                old_level = (old_exp // 50) + 1
+                new_level = (new_exp // 50) + 1
+                remaining_exp_old = old_exp % 50  # Calculate remaining XP for the current level (old)
+                remaining_exp_new = new_exp % 50  # Calculate remaining XP for the current level (new)
 
-            # Cap the XP required for leveling up at 50
-            next_level_exp_old = min((old_level * 50), 50)  # Cap the next level XP at 50
-            next_level_exp_new = min((new_level * 50), 50)  # Cap the next level XP at 50
+                # Cap the XP required for leveling up at 50
+                next_level_exp_old = min((old_level * 50), 50)  # Cap the next level XP at 50
+                next_level_exp_new = min((new_level * 50), 50)  # Cap the next level XP at 50
 
-            cur.execute(f"UPDATE GUILD_{ctx.guild.id} SET exp={new_exp} WHERE user_id={user.id}")
-            con.commit()
+                cur.execute(f"UPDATE GUILD_{ctx.guild.id} SET exp={new_exp} WHERE user_id={user.id}")
+                con.commit()
 
-            # Create an embedded message to show changes
-            embed = discord.Embed(title="XP and Level Change", color=discord.Color.gold())
-            embed.set_thumbnail(url=user.avatar)
-            embed.add_field(name="User", value=user.mention, inline=False)
-            embed.add_field(name="Old XP", value=f"{remaining_exp_old}/{next_level_exp_old} (Level {old_level})", inline=False)
-            embed.add_field(name="New XP", value=f"{remaining_exp_new}/{next_level_exp_new} (Level {new_level})", inline=False)
+                # Create an embedded message to show changes
+                embed = discord.Embed(title="XP and Level Change", color=discord.Color.gold())
+                embed.set_thumbnail(url=user.avatar)
+                embed.add_field(name="User", value=user.mention, inline=False)
+                embed.add_field(name="Old XP", value=f"{remaining_exp_old}/{next_level_exp_old} (Level {old_level})", inline=False)
+                embed.add_field(name="New XP", value=f"{remaining_exp_new}/{next_level_exp_new} (Level {new_level})", inline=False)
 
-            await ctx.send(embed=embed)
-        else:
-            await ctx.send("User not found in the database.")
-    except sqlite3.OperationalError as e:
-        await ctx.send("Database error occurred.")
-        print("SQLite Error:", e)
-
+                await ctx.send(embed=embed)
+            else:
+                await ctx.send("User not found in the database.")
+        except sqlite3.OperationalError as e:
+            await ctx.send("Database error occurred.")
+            print("SQLite Error:", e)
+    else:
+        await ctx.reply("You do not have permission to use this command.")
 
 
 
@@ -210,6 +212,7 @@ async def editxp(ctx, user: discord.User, amount: int):
 
 @bot.command(help="Shows the specified user's experience and levels.")
 async def xp(ctx, user: discord.User = None):
+    
     try:
         if user is None:
             user = ctx.author
