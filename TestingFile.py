@@ -120,7 +120,7 @@ class PaginationView(discord.ui.View):
 con = sqlite3.connect('level.db')
 cur = con.cursor()
 intents = discord.Intents.all()
-bot = commands.Bot(command_prefix='!', intents=intents, help_command=CustomHelpCommand())
+bot = commands.Bot(command_prefix='.', intents=intents, help_command=CustomHelpCommand())
 
 
 
@@ -128,7 +128,7 @@ bot = commands.Bot(command_prefix='!', intents=intents, help_command=CustomHelpC
 async def on_ready():
     print(f'{bot.user} is now running!')
     
-    await bot.change_presence(status=discord.Status.dnd, activity=discord.Activity(type=discord.ActivityType.listening, name="Jumpstyle (1) Full"))
+    await bot.change_presence(status=discord.Status.dnd, activity=discord.Activity(type=discord.ActivityType.watching, name="Fate"))
     # Change bot avatar
     
     bot.loop.create_task(send_timed_message())
@@ -164,43 +164,62 @@ async def init(ctx):
         await ctx.reply("You do not haver permission to use this command.")
 
 
+async def level_up_notification(user, level, channel):
+    message = f"Congratulations {user.mention}! You've reached level {level}!"
+    await channel.send(message)
 
-@bot.command(help="Edit a user's experience.")
-async def editxp(ctx, user: discord.User, amount: int):
-    try:
-        cur.execute(f"SELECT * FROM GUILD_{ctx.guild.id} WHERE user_id={user.id}")
-        result = cur.fetchone()
 
-        if result:
-            old_exp = result[1]
-            new_exp = max(0, old_exp + amount)  # Ensure the new XP is non-negative
 
-            # Calculate the old and new levels
-            old_level = (old_exp // 50) + 1
-            new_level = (new_exp // 50) + 1
-            remaining_exp_old = old_exp % 50  # Calculate remaining XP for the current level (old)
-            remaining_exp_new = new_exp % 50  # Calculate remaining XP for the current level (new)
+@bot.command(help="Edit a user's experience.\n For the <amount> of xp you can use 'reset' to reset the user's XP.")
+async def editxp(ctx, user: discord.User, amount):
+    if ctx.author.guild_permissions.administrator:
+        try:
+            cur.execute(f"SELECT * FROM GUILD_{ctx.guild.id} WHERE user_id={user.id}")
+            result = cur.fetchone()
 
-            # Cap the XP required for leveling up at 50
-            next_level_exp_old = min((old_level * 50), 50)  # Cap the next level XP at 50
-            next_level_exp_new = min((new_level * 50), 50)  # Cap the next level XP at 50
+            if result:
+                if amount == "reset":
+                    new_exp = 0
+                else:
+                    new_exp = max(0, result[1] + int(amount))  # Ensure the new XP is non-negative
 
-            cur.execute(f"UPDATE GUILD_{ctx.guild.id} SET exp={new_exp} WHERE user_id={user.id}")
-            con.commit()
+                # Calculate the old and new levels
+                old_level = (result[1] // 50) + 1
+                new_level = (new_exp // 50) + 1
+                remaining_exp_old = result[1] % 50  # Calculate remaining XP for the current level (old)
+                remaining_exp_new = new_exp % 50  # Calculate remaining XP for the current level (new)
 
-            # Create an embedded message to show changes
-            embed = discord.Embed(title="XP and Level Change", color=discord.Color.gold())
-            embed.set_thumbnail(url=user.avatar)
-            embed.add_field(name="User", value=user.mention, inline=False)
-            embed.add_field(name="Old XP", value=f"{remaining_exp_old}/{next_level_exp_old} (Level {old_level})", inline=False)
-            embed.add_field(name="New XP", value=f"{remaining_exp_new}/{next_level_exp_new} (Level {new_level})", inline=False)
+                # Cap the XP required for leveling up at 50
+                next_level_exp_old = min((old_level * 50), 50)  # Cap the next level XP at 50
+                next_level_exp_new = min((new_level * 50), 50)  # Cap the next level XP at 50
 
-            await ctx.send(embed=embed)
-        else:
-            await ctx.send("User not found in the database.")
-    except sqlite3.OperationalError as e:
-        await ctx.send("Database error occurred.")
-        print("SQLite Error:", e)
+                cur.execute(f"UPDATE GUILD_{ctx.guild.id} SET exp={new_exp} WHERE user_id={user.id}")
+                con.commit()
+
+                # Check if user leveled up
+                if new_level > old_level:
+                    # Send level up notification in a specific channel
+                    level_up_channel_id = 1217998981246881832  # Replace with your desired channel ID
+                    level_up_channel = bot.get_channel(level_up_channel_id)
+                    if level_up_channel:
+                        await level_up_notification(user, new_level, level_up_channel)
+
+                # Create an embedded message to show changes
+                embed = discord.Embed(title="XP and Level Change", color=discord.Color.gold())
+                embed.set_thumbnail(url=user.avatar)
+                embed.add_field(name="User", value=user.mention, inline=False)
+                embed.add_field(name="Old XP", value=f"{remaining_exp_old}/{next_level_exp_old} (Level {old_level})", inline=False)
+                embed.add_field(name="New XP", value=f"{remaining_exp_new}/{next_level_exp_new} (Level {new_level})", inline=False)
+
+                await ctx.send(embed=embed)
+            else:
+                await ctx.send("User not found in the database.")
+        except sqlite3.OperationalError as e:
+            await ctx.send("Database error occurred.")
+            print("SQLite Error:", e)
+    else:
+        await ctx.reply("You do not have permission to use this command.")
+
 
 
 
@@ -210,6 +229,7 @@ async def editxp(ctx, user: discord.User, amount: int):
 
 @bot.command(help="Shows the specified user's experience and levels.")
 async def xp(ctx, user: discord.User = None):
+    
     try:
         if user is None:
             user = ctx.author
@@ -263,10 +283,6 @@ async def leaderboard(ctx):
     except sqlite3.OperationalError:
         await ctx.send("Database not initialized")
 
-#@bot.event
-#async def on_level_up(guild, user, new_level):
-#    channel = bot.get_channel(1208433357982011395)  # Channel ID where users get pinged
-#    await channel.send(f"{user.mention} has reached level {new_level}!")
 
 
 
