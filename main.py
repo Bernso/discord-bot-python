@@ -1,5 +1,6 @@
 import discord
 from discord.ext import commands
+from discord import Embed
 import random
 import pickle
 import os
@@ -7,9 +8,9 @@ from dotenv import load_dotenv
 import asyncio
 import traceback  
 import sys
-import subprocess
+import sqlite3
 
-os.system('cls')
+#os.system('cls')
 
 
 load_dotenv()
@@ -53,9 +54,10 @@ async def send_timed_message():
     channel = bot.get_channel(1047658455172911116)
     while not bot.is_closed():
         # Send your message here
+        await asyncio.sleep(800)
         await channel.send("Welcome, this is my place where I experiement with my bot and try experimenting on things!")
         # Wait for 1 hour (3600 seconds) 3 hours (10800)
-        await asyncio.sleep(10800)
+        await asyncio.sleep(10000)
 
 
 
@@ -115,7 +117,8 @@ class PaginationView(discord.ui.View):
         self.message = await ctx.send(embed=self.pages[self.current_page], view=self)
 
 
-
+con = sqlite3.connect('level.db')
+cur = con.cursor()
 intents = discord.Intents.all()
 bot = commands.Bot(command_prefix='!', intents=intents, help_command=CustomHelpCommand())
 
@@ -127,31 +130,152 @@ async def on_ready():
     
     await bot.change_presence(status=discord.Status.dnd, activity=discord.Activity(type=discord.ActivityType.listening, name="Jumpstyle (1) Full"))
     # Change bot avatar
+    
+    bot.loop.create_task(send_timed_message())
+    channel = bot.get_channel(1208435912342511637)
+    if channel:
+        async for message in channel.history():
+            # Delete the previous message if it was sent by the bot
+            await message.delete()
+                
+        embed = discord.Embed(title = "Verification", description = "Click below to verify.")
+        await channel.send(embed = embed, view = Verification())
+    else:
+        print("Could not send verification message for whatever reason.")
     with open('projectK.gif', 'rb') as f:
         avatar_bytes = f.read()
     await bot.user.edit(avatar=avatar_bytes)
     await bot.user.edit(username="Bernso")
-    bot.loop.create_task(send_timed_message())
 
-@bot.command()
-async def run_file(ctx, file_name):
-    # Check if the file exists
-    if not os.path.exists(file_name):
-        await ctx.reply("File not found.")
-        return
 
-    # Check if the file has a .py extension
-    if not file_name.endswith('.py'):
-        await ctx.reply("Only Python files (.py) can be executed.")
-        return
+@bot.command(help = "Starts up the leveling system if it hasnt already.")
+async def init(ctx):
+    if ctx.author.guild_permissions.administrator:
+        cur.execute(f'''CREATE TABLE IF NOT EXISTS GUILD_{ctx.guild.id} (user_id int NOT NULL, exp int DEFAULT 0, lvl int DEFAULT 0) ''')
 
-    # Execute the Python file
+        for x in ctx.guild.members:
+            if not x.bot:
+                cur.execute(f"INSERT INTO GUILD_{ctx.guild.id} (user_id) VALUES ({x.id})")
+
+        con.commit()
+
+        await ctx.channel.send("Leveling system initialized")
+    else:
+        await ctx.reply("You do not haver permission to use this command.")
+
+
+
+@bot.command(help="Edit a user's experience.")
+async def editxp(ctx, user: discord.User, amount: int):
     try:
-        result = subprocess.run(['python', file_name],capture_output=True, text=True)
-        output = result.stdout.strip()
-        await ctx.reply(f"Output:\n```\n{output}\n```")
-    except Exception as e:
-        await ctx.reply(f"Error occurred: {str(e)}")
+        cur.execute(f"SELECT * FROM GUILD_{ctx.guild.id} WHERE user_id={user.id}")
+        result = cur.fetchone()
+
+        if result:
+            old_exp = result[1]
+            new_exp = max(0, old_exp + amount)  # Ensure the new XP is non-negative
+
+            # Calculate the old and new levels
+            old_level = (old_exp // 50) + 1
+            new_level = (new_exp // 50) + 1
+            remaining_exp_old = old_exp % 50  # Calculate remaining XP for the current level (old)
+            remaining_exp_new = new_exp % 50  # Calculate remaining XP for the current level (new)
+
+            # Cap the XP required for leveling up at 50
+            next_level_exp_old = min((old_level * 50), 50)  # Cap the next level XP at 50
+            next_level_exp_new = min((new_level * 50), 50)  # Cap the next level XP at 50
+
+            cur.execute(f"UPDATE GUILD_{ctx.guild.id} SET exp={new_exp} WHERE user_id={user.id}")
+            con.commit()
+
+            # Create an embedded message to show changes
+            embed = discord.Embed(title="XP and Level Change", color=discord.Color.gold())
+            embed.set_thumbnail(url=user.avatar)
+            embed.add_field(name="User", value=user.mention, inline=False)
+            embed.add_field(name="Old XP", value=f"{remaining_exp_old}/{next_level_exp_old} (Level {old_level})", inline=False)
+            embed.add_field(name="New XP", value=f"{remaining_exp_new}/{next_level_exp_new} (Level {new_level})", inline=False)
+
+            await ctx.send(embed=embed)
+        else:
+            await ctx.send("User not found in the database.")
+    except sqlite3.OperationalError as e:
+        await ctx.send("Database error occurred.")
+        print("SQLite Error:", e)
+
+
+
+
+
+
+
+@bot.command(help="Shows the specified user's experience and levels.")
+async def xp(ctx, user: discord.User = None):
+    try:
+        if user is None:
+            user = ctx.author
+
+        cur.execute(f"SELECT * FROM GUILD_{ctx.guild.id} WHERE user_id={user.id}")
+        result = cur.fetchone()
+
+        if result is not None:
+            exp = result[1]
+            level = (exp // 50) + 1  # Calculate the level
+            remaining_exp = exp % 50  # Calculate remaining XP for the current level
+
+            # Cap the XP required for leveling up at 50
+            next_level_exp = min((level * 50), 50)  # Cap the next level XP at 50
+
+            # Create an embedded message with user mention in the title
+            embed = Embed(title=f"{user.display_name}", color=discord.Color.green())
+            embed.set_thumbnail(url=user.avatar)
+            embed.add_field(name="XP", value=f"{remaining_exp}/{next_level_exp} XP", inline=True)
+            embed.add_field(name="Level", value=level, inline=True)
+
+            await ctx.send(embed=embed)
+        else:
+            await ctx.send("Hmm no such user in the database")
+    except sqlite3.OperationalError:
+        await ctx.send("Database not initialized")
+
+
+
+
+
+@bot.command(help="Shows all the highest level people in the server.")
+async def leaderboard(ctx):
+    try:
+        cur.execute(f"SELECT user_id, MAX(exp) FROM GUILD_{ctx.guild.id} GROUP BY user_id ORDER BY MAX(exp) DESC")
+        results = cur.fetchall()
+
+        if results:
+            embed = discord.Embed(title="Leaderboard", color=discord.Color.blue())
+
+            for index, (user_id, exp) in enumerate(results, start=1):
+                user = ctx.guild.get_member(user_id)
+                if user:
+                    level = (exp // 50) + 1
+                    remaining_exp = exp % 50  # Calculate remaining XP for the current level
+                    embed.add_field(name=f"{index}. {user.display_name}", value=f"XP: {remaining_exp} | Level: {level}", inline=False)
+
+            await ctx.send(embed=embed)
+        else:
+            await ctx.send("No users found in the database.")
+    except sqlite3.OperationalError:
+        await ctx.send("Database not initialized")
+
+#@bot.event
+#async def on_level_up(guild, user, new_level):
+#    channel = bot.get_channel(1208433357982011395)  # Channel ID where users get pinged
+#    await channel.send(f"{user.mention} has reached level {new_level}!")
+
+
+
+
+
+
+
+
+
 
 class Verification(discord.ui.View):
     def __init__(self):
@@ -166,7 +290,7 @@ class Verification(discord.ui.View):
             await user.add_roles(user.guild.get_role(verified))
             await user.send("You have been verified!")
 
-@bot.command()
+@bot.command(help = "Creates the verify message people can use to verify.")
 async def start_verify(ctx):
     if ctx.author.guild_permissions.administrator:
         embed = discord.Embed(title = "Verification", description = "Click below to verify.")
@@ -188,11 +312,15 @@ async def password_gen(ctx, length: int, special_chars: bool):
     if special_chars:
         chars += "!@#$%^&*()_+-={[]};:/?.><,|~`"
     userpass = ''.join(random.choice(chars) for _ in range(length))
-    await user.send(f"Your password is:\n{userpass}")
+    await user.send(f"Your password is:\n```{userpass}```")
+    await ctx.reply("Your generated password has been sent to your dm's.")
 
+@bot.command(help = "Shows the users ping.")
+async def ping(ctx):
 
+    await ctx.reply(f"Your ping is:   `{round(bot.latency*1000)} ms`")
 
-@bot.command()
+@bot.command(help = "Deletes a specified role.")
 async def delete_role(ctx, role_name: str):
     guild = ctx.guild
     
@@ -481,7 +609,7 @@ async def die_when(ctx):
 async def best_series(ctx):
     await ctx.reply("The Fate series :fire:")
 
-@bot.command()
+@bot.command(help = "Bans the user inputed.")
 async def ban(ctx, member: discord.Member, *, reason=None):
     # Check if the user invoking the command has the necessary permissions
     if ctx.author.guild_permissions.ban_members:
@@ -634,6 +762,21 @@ async def mute(ctx, member: discord.Member, duration: int):
 async def on_message(message: discord.Message) -> None:
     if message.author == bot.user:
         return
+    else:
+        try:
+            cur.execute(f"SELECT * FROM GUILD_{message.guild.id} WHERE user_id={message.author.id}")
+            result = cur.fetchone()
+
+            if result[1] == 99:
+                await message.channel.send(f"{message.author.mention} advanced to lvl {result[2] + 1}")
+                cur.execute(f"UPDATE GUILD_{message.guild.id} SET exp=0, lvl={result[2] + 1} WHERE user_id={message.author.id}")
+                con.commit()
+            else:
+                cur.execute(f"UPDATE GUILD_{message.guild.id} SET exp={result[1] + 1} WHERE user_id={message.author.id}")
+                con.commit()
+
+        except sqlite3.OperationalError:
+            pass
 
     # Record the message details
     message_record = {
@@ -667,6 +810,9 @@ async def on_message(message: discord.Message) -> None:
         else:
             print("Invalid channel ID")
 
+    
+    
+
 @bot.command(help="You'll be able to send messages through the console if you have the appropriate permissions")
 async def send_console_embed(ctx):
     # Replace ENABLED_ROLE_ID with the ID of the role that should be allowed to send console messages
@@ -690,7 +836,7 @@ async def send_console_embed(ctx):
 
     
 
-@bot.command(help="Add roles to a selected user.")
+@bot.command(help="Removes roles to a selected user.")
 async def remove_role(ctx, member: discord.Member, *roles):
     # Check if the user invoking the command has the necessary permissions
     if ctx.author.guild_permissions.manage_roles:
@@ -708,7 +854,7 @@ async def remove_role(ctx, member: discord.Member, *roles):
                 role = discord.utils.get(ctx.guild.roles, name=role_name)
                 if role:
                     await member.remove_roles(role)
-                    await ctx.send(f"Added role '{role_name}' to {member.mention}")
+                    await ctx.send(f"Removed role '{role_name}' from {member.mention}")
                 else:
                     await ctx.send(f"Role '{role_name}' does not exist.")
     else:
