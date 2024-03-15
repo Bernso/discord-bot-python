@@ -20,6 +20,8 @@ ENABLED_USER_ID = 712946563508469832 # My user id
 BOT_LOG_CHANNEL_ID = 1208431780529578014
 VERIFIED_ROLE_NAME = "Verified"
 
+
+
 # Load existing message records
 try:
     with open(RECORDS_FILENAME, 'rb') as file:
@@ -122,6 +124,9 @@ cur = con.cursor()
 intents = discord.Intents.all()
 bot = commands.Bot(command_prefix='.', intents=intents, help_command=CustomHelpCommand())
 
+initial_extensions = ['your_cog_module']  # Replace 'your_cog_module' with the filename of your cog module
+for extension in initial_extensions:
+    bot.load_extension(extension)
 
 
 @bot.event
