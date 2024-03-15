@@ -402,8 +402,11 @@ async def page_test(ctx: commands.Context):
 
 @bot.command(help = "Replies to your messag with a link to my linktree.")
 async def linktree(ctx):
-    await ctx.reply(f'Link to Linktree:\nhttps://linktr.ee/Bernso')
+    await ctx.reply('Link to Linktree:\nhttps://linktr.ee/Bernso')
 
+@bot.command(help = "Sends my GitHub page.")
+async def github(ctx):
+    await ctx.reply("Link to GitHub:\nhttps://github.com/Bernso")
 
 @bot.command(help = "Gives you a random number from 1-666")
 async def roll(ctx):
