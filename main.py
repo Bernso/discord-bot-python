@@ -10,7 +10,7 @@ import traceback
 import sys
 import sqlite3
 
-#os.system('cls')
+os.system('cls')
 
 
 load_dotenv()
