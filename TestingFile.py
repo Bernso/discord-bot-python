@@ -830,7 +830,7 @@ async def on_message(message: discord.Message) -> None:
             cur.execute(f"SELECT * FROM GUILD_{message.guild.id} WHERE user_id={message.author.id}")
             result = cur.fetchone()
 
-            if result[1] == 99:
+            if result is not None and result[1] == 99:
                 await message.channel.send(f"{message.author.mention} advanced to lvl {result[2] + 1}")
                 cur.execute(f"UPDATE GUILD_{message.guild.id} SET exp=0, lvl={result[2] + 1} WHERE user_id={message.author.id}")
                 con.commit()
