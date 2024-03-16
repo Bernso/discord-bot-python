@@ -71,7 +71,7 @@ class CustomHelpCommand(commands.HelpCommand):
     async def send_bot_help(self, mapping):
         embed_pages = []
         current_page = 1
-        commands_per_page = 10  # Number of commands to display per page
+        commands_per_page = 15  # Number of commands to display per page
 
         # Create a list of commands and their signatures
         command_list = [self.get_command_signature(command) for cog, commands in mapping.items() for command in commands]
@@ -918,6 +918,11 @@ async def remove_role(ctx, member: discord.Member, *roles):
     else:
         # If the user doesn't have the necessary permissions, reply with an error message
         await ctx.reply("You don't have permission to use this command.")
+
+
+@bot.command(name = "..", help = "Why are you speechless?")
+async def speechless(ctx):
+    await ctx.reply("Why are you speechless?")
 
 @bot.command(name = "console-msg", help="You'll be able to send messages through the console if you have the appropriate permissions")
 async def send_console_message(ctx):

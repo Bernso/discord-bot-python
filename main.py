@@ -9,8 +9,9 @@ import asyncio
 import traceback  
 import sys
 import sqlite3
+import subprocess
 
-#os.system('cls')
+os.system('cls')
 
 
 load_dotenv()
@@ -19,6 +20,8 @@ TOKEN = os.getenv('ENVDISCORD_TOKEN')
 ENABLED_USER_ID = 712946563508469832 # My user id
 BOT_LOG_CHANNEL_ID = 1208431780529578014
 VERIFIED_ROLE_NAME = "Verified"
+
+
 
 # Load existing message records
 try:
@@ -68,7 +71,7 @@ class CustomHelpCommand(commands.HelpCommand):
     async def send_bot_help(self, mapping):
         embed_pages = []
         current_page = 1
-        commands_per_page = 10  # Number of commands to display per page
+        commands_per_page = 15  # Number of commands to display per page
 
         # Create a list of commands and their signatures
         command_list = [self.get_command_signature(command) for cog, commands in mapping.items() for command in commands]
@@ -122,7 +125,11 @@ cur = con.cursor()
 intents = discord.Intents.all()
 bot = commands.Bot(command_prefix='.', intents=intents, help_command=CustomHelpCommand())
 
-
+#async def main():
+#    initial_extensions = ['xp']  # Replace 'your_cog_module' with the filename of your cog module
+#    for extension in initial_extensions:
+#        await bot.load_extension(extension)
+#asyncio.run(main())
 
 @bot.event
 async def on_ready():
@@ -142,6 +149,7 @@ async def on_ready():
         await channel.send(embed = embed, view = Verification())
     else:
         print("Could not send verification message for whatever reason.")
+    
     with open('projectK.gif', 'rb') as f:
         avatar_bytes = f.read()
     await bot.user.edit(avatar=avatar_bytes)
@@ -329,13 +337,29 @@ async def start_verify(ctx):
     else:
         await ctx.reply("You cannot use this command. Required = Administrator")
 
+@bot.command(name='runfile')
+async def run_file(ctx, file_name: str):
+    try:
+        # Execute the Python file and capture its output
+        result = subprocess.run(['python', f'{file_name}.py'], capture_output=True, text=True)
+        output = result.stdout
+
+        # Send the output as a message
+        await ctx.send(f"Output:\n```{output}```")
+    except Exception as e:
+        await ctx.send(f"An error occurred: {str(e)}")
+
 @bot.command(help = "Say the command and the bot will dm you a message, no parameters are needed.")
 async def dm_test(ctx):
     chars = "QWERTYUIOPLKJHGFDSAZXCVBNMqwertyuiopasdfghjklzxcvbnm1234567890!@#$%^&*()_+-={[]};:/?.><,|~`"
     user = ctx.author
-    await user.send("Hello Monkey!")
-    await user.send("https://tenor.com/view/monkey-freiza-dbs-dbz-gif-25933202")
-
+    try:
+        await user.send("Hello Monkey!")
+        await user.send("https://tenor.com/view/monkey-freiza-dbs-dbz-gif-25933202")
+        await ctx.reply("Messages sent to your dm's.")
+    except Exception as e:
+        await ctx.send(f"An error occurred: {str(e)}\nThis error is most likely due to your dm's being private, please make them public.")
+    
 @bot.command(help = "The bot will randomly generate a password for you based on the length you requested.\n\nThe <special_chars> is boolean, it will be 'True' or 'False'.")
 async def password_gen(ctx, length: int, special_chars: bool):
     user = ctx.author
@@ -847,7 +871,7 @@ async def on_message(message: discord.Message) -> None:
     
     
 
-@bot.command(help="You'll be able to send messages through the console if you have the appropriate permissions")
+@bot.command(name = "console-embed", help="You'll be able to send messages through the console if you have the appropriate permissions")
 async def send_console_embed(ctx):
     # Replace ENABLED_ROLE_ID with the ID of the role that should be allowed to send console messages
     
@@ -895,7 +919,12 @@ async def remove_role(ctx, member: discord.Member, *roles):
         # If the user doesn't have the necessary permissions, reply with an error message
         await ctx.reply("You don't have permission to use this command.")
 
-@bot.command(help="You'll be able to send messages through the console if you have the appropriate permissions")
+
+@bot.command(name = "..", help = "Why are you speechless?")
+async def speechless(ctx):
+    await ctx.reply("Why are you speechless?")
+
+@bot.command(name = "console-msg", help="You'll be able to send messages through the console if you have the appropriate permissions")
 async def send_console_message(ctx):
     # Replace ENABLED_ROLE_ID with the ID of the role that should be allowed to send console messages
     
