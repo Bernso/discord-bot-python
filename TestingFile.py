@@ -919,7 +919,7 @@ async def remove_role(ctx, member: discord.Member, *roles):
         # If the user doesn't have the necessary permissions, reply with an error message
         await ctx.reply("You don't have permission to use this command.")
 
-@bot.command(name = "console-msg"help="You'll be able to send messages through the console if you have the appropriate permissions")
+@bot.command(name = "console-msg", help="You'll be able to send messages through the console if you have the appropriate permissions")
 async def send_console_message(ctx):
     # Replace ENABLED_ROLE_ID with the ID of the role that should be allowed to send console messages
     
