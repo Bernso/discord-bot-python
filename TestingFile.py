@@ -9,6 +9,7 @@ import asyncio
 import traceback  
 import sys
 import sqlite3
+import subprocess
 
 #os.system('cls')
 
@@ -334,13 +335,29 @@ async def start_verify(ctx):
     else:
         await ctx.reply("You cannot use this command. Required = Administrator")
 
+@bot.command(name='runfile')
+async def run_file(ctx, file_name: str):
+    try:
+        # Execute the Python file and capture its output
+        result = subprocess.run(['python', f'{file_name}.py'], capture_output=True, text=True)
+        output = result.stdout
+
+        # Send the output as a message
+        await ctx.send(f"Output:\n```{output}```")
+    except Exception as e:
+        await ctx.send(f"An error occurred: {str(e)}")
+
 @bot.command(help = "Say the command and the bot will dm you a message, no parameters are needed.")
 async def dm_test(ctx):
     chars = "QWERTYUIOPLKJHGFDSAZXCVBNMqwertyuiopasdfghjklzxcvbnm1234567890!@#$%^&*()_+-={[]};:/?.><,|~`"
     user = ctx.author
-    await user.send("Hello Monkey!")
-    await user.send("https://tenor.com/view/monkey-freiza-dbs-dbz-gif-25933202")
-
+    try:
+        await user.send("Hello Monkey!")
+        await user.send("https://tenor.com/view/monkey-freiza-dbs-dbz-gif-25933202")
+        await ctx.reply("Messages sent to your dm's.")
+    except Exception as e:
+        await ctx.send(f"An error occurred: {str(e)}\nThis error is most likely due to your dm's being private, please make them public.")
+    
 @bot.command(help = "The bot will randomly generate a password for you based on the length you requested.\n\nThe <special_chars> is boolean, it will be 'True' or 'False'.")
 async def password_gen(ctx, length: int, special_chars: bool):
     user = ctx.author
