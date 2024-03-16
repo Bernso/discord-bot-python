@@ -11,6 +11,7 @@ import sys
 import sqlite3
 import subprocess
 
+
 os.system('cls')
 
 
@@ -125,11 +126,15 @@ cur = con.cursor()
 intents = discord.Intents.all()
 bot = commands.Bot(command_prefix='.', intents=intents, help_command=CustomHelpCommand())
 
+
+
+
 #async def main():
 #    initial_extensions = ['xp']  # Replace 'your_cog_module' with the filename of your cog module
 #    for extension in initial_extensions:
 #        await bot.load_extension(extension)
 #asyncio.run(main())
+
 
 @bot.event
 async def on_ready():
@@ -825,7 +830,7 @@ async def on_message(message: discord.Message) -> None:
             cur.execute(f"SELECT * FROM GUILD_{message.guild.id} WHERE user_id={message.author.id}")
             result = cur.fetchone()
 
-            if result[1] == 99:
+            if result is not None and result[1] == 99:
                 await message.channel.send(f"{message.author.mention} advanced to lvl {result[2] + 1}")
                 cur.execute(f"UPDATE GUILD_{message.guild.id} SET exp=0, lvl={result[2] + 1} WHERE user_id={message.author.id}")
                 con.commit()
@@ -994,10 +999,12 @@ async def set_role_log_channel(ctx, channel: discord.TextChannel):
 
 @bot.event
 async def on_member_update(before, after):
+   
+
     if before.roles != after.roles:
         # Determine the role changes (added or removed roles)
-        added_roles = [role for role in after.roles if role not in before.roles]
-        removed_roles = [role for role in before.roles if role not in after.roles]
+        added_roles = [role for role in after.roles if role not in before.roles and str(role)]
+        removed_roles = [role for role in before.roles if role not in after.roles and str(role)]
 
         # Get the moderator who did the modification
         moderator = after.guild.get_member(after.guild.owner_id)
@@ -1015,6 +1022,7 @@ async def on_member_update(before, after):
                     embed = discord.Embed(title="Role Changes", color=discord.Color.red())
                     embed.add_field(name="Role Removed", value=f"{moderator.mention} removed role {role.mention} from {after.mention}", inline=False)
             await channel.send(embed=embed)
+
 
 @bot.event
 async def on_guild_role_create(role):
@@ -1109,8 +1117,8 @@ async def on_command_error(ctx, error):
 
 
 
-@bot.command(help="Search for available commands.")
-async def search(ctx, command_name: str):
+@bot.command(name = "search", help="Search for available commands.")
+async def search_command(ctx, command_name: str):
     command_names = [cmd.name for cmd in bot.commands]
     if command_name in command_names:
         command = bot.get_command(command_name)
