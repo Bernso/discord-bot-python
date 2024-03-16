@@ -125,10 +125,11 @@ cur = con.cursor()
 intents = discord.Intents.all()
 bot = commands.Bot(command_prefix='.', intents=intents, help_command=CustomHelpCommand())
 
-initial_extensions = ['your_cog_module']  # Replace 'your_cog_module' with the filename of your cog module
-for extension in initial_extensions:
-    bot.load_extension(extension)
-
+#async def main():
+#    initial_extensions = ['xp']  # Replace 'your_cog_module' with the filename of your cog module
+#    for extension in initial_extensions:
+#        await bot.load_extension(extension)
+#asyncio.run(main())
 
 @bot.event
 async def on_ready():
@@ -148,6 +149,7 @@ async def on_ready():
         await channel.send(embed = embed, view = Verification())
     else:
         print("Could not send verification message for whatever reason.")
+    
     with open('projectK.gif', 'rb') as f:
         avatar_bytes = f.read()
     await bot.user.edit(avatar=avatar_bytes)
@@ -869,7 +871,7 @@ async def on_message(message: discord.Message) -> None:
     
     
 
-@bot.command(help="You'll be able to send messages through the console if you have the appropriate permissions")
+@bot.command(name = "console-embed", help="You'll be able to send messages through the console if you have the appropriate permissions")
 async def send_console_embed(ctx):
     # Replace ENABLED_ROLE_ID with the ID of the role that should be allowed to send console messages
     
@@ -917,7 +919,7 @@ async def remove_role(ctx, member: discord.Member, *roles):
         # If the user doesn't have the necessary permissions, reply with an error message
         await ctx.reply("You don't have permission to use this command.")
 
-@bot.command(help="You'll be able to send messages through the console if you have the appropriate permissions")
+@bot.command(name = "console-msg"help="You'll be able to send messages through the console if you have the appropriate permissions")
 async def send_console_message(ctx):
     # Replace ENABLED_ROLE_ID with the ID of the role that should be allowed to send console messages
     
