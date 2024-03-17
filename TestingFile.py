@@ -12,7 +12,7 @@ import sqlite3
 import subprocess
 
 
-#os.system('cls')
+os.system('cls')
 
 
 load_dotenv()
@@ -155,9 +155,9 @@ async def on_ready():
     else:
         print("Could not send verification message for whatever reason.")
     
-    with open('projectK.gif', 'rb') as f:
-        avatar_bytes = f.read()
-    await bot.user.edit(avatar=avatar_bytes)
+    #with open('projectK.gif', 'rb') as f:
+    #    avatar_bytes = f.read()
+    #await bot.user.edit(avatar=avatar_bytes)
     await bot.user.edit(username="Bernso")
 
 
