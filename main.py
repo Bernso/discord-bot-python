@@ -545,8 +545,8 @@ async def race(ctx, option=None):
 
 
 
-@bot.command(help = "Guesses the chance of you passing your GCSE's")
-async def bot_will_i_pass_my_gcses(ctx):
+@bot.command(name = "pass_gcse's", help = "Guesses the chance of you passing your GCSE's")
+async def pass_gcse(ctx):
     if ctx.author.id == 550262161998479380:
         await ctx.reply('You stupid monkey you dont have a chance of passing') 
     elif ctx.author.id == 581916234057252865: 
