@@ -316,7 +316,56 @@ async def leaderboard(ctx):
 
 
 
+@bot.command(name="role_colour")
+async def changecolor(ctx, role_name: str, color: discord.Color):
+    """
+    Change the color of a role.
 
+    Example usage: 
+    .role_colour role_name #RRGGBB
+
+    Available colors:
+    - Red
+    - Green
+    - Blue
+    - Yellow
+    - Magenta
+    - Pink
+    
+    Unavailable colours:
+    - Black
+    - White
+    - Cyan
+    """
+    if ctx.author.guild_permissions.administrator:
+        guild = ctx.guild
+        role = discord.utils.get(guild.roles, name=role_name)
+        
+        if role:
+            try:
+                await role.edit(color=color)
+                await ctx.reply(f"Changed color of role {role_name} to {color}")
+                
+                # Sending an embedded message to the specified channel
+                embed = discord.Embed(
+                    title="Role Color Changed",
+                    description=f"The color of role {role.mention} has been changed to {color}.",
+                    color=color
+                )
+                embed.set_author(name=ctx.author.name, icon_url=ctx.author.avatar)
+                embed.set_footer(text="Role Color Change Notification")
+                
+                target_channel = bot.get_channel(1208431780529578014)
+                await target_channel.send(embed=embed)
+                
+            except discord.Forbidden:
+                await ctx.reply("I don't have permissions to edit roles.")
+            except discord.HTTPException:
+                await ctx.reply("Failed to change color.")
+        else:
+            await ctx.send(f"Role {role_name} not found.")
+    else:
+        await ctx.reply("You do not have permission to use this command.")
 
 
 
@@ -689,10 +738,14 @@ async def ban(ctx, member: discord.Member, *, reason=None):
 async def on_member_join(member):
     # Get the log channel
     log_channel = bot.get_channel(BOT_LOG_CHANNEL_ID)
+    general_chat = bot.get_channel(1047658455172911116)
     if log_channel:
         # Create an embedded message for member join event
-        embed = discord.Embed(title="Member Joined", description=f"{member.mention} has joined the server.", color=discord.Color.green())
+        embed = discord.Embed(title="Member Joined", description=f"{member.mention} has joined the server! \nWelcome!", color=discord.Color.green())
         await log_channel.send(embed=embed)
+        await general_chat.send(embed=embed)
+    else:
+        general_chat.send(f"Cannot find {log_channel}")
 
 # Event for when a member leaves the server
 @bot.event
