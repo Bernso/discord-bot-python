@@ -733,6 +733,48 @@ async def ban(ctx, member: discord.Member, *, reason=None):
         # If the user doesn't have the necessary permissions, reply with an error message
         await ctx.send("You don't have permission to use this command.")
 
+
+@bot.command(help="Kicks the specified member from the discord server.")
+async def kick(ctx, member: discord.Member, reason: str):
+    if ctx.author.guild_permissions.kick_members:
+        # Kick the member
+        await member.kick(reason=reason)
+        
+        # Create an embedded message for channel
+        embed_channel = discord.Embed(
+            title="Member Kicked",
+            description=f"{member.name} has been kicked from the server.",
+            color=discord.Color.red()
+        )
+        user = ctx.author
+        embed_channel.add_field(name="Reason", value=reason)
+        embed_channel.set_footer(text=f"Kicked by {user.mention}")
+        
+        # Get the channel where you want to send the embedded message
+        channel1 = bot.get_channel(1047658455172911116)  
+        channel2 = bot.get_channel(1208431780529578014)
+        
+        # Send the embedded message to the specified channels
+        await channel1.send(embed=embed_channel)
+        await channel2.send(embed=embed_channel)
+        
+        # Create an embedded message for DM
+        embed_dm = discord.Embed(
+            title="You have been kicked",
+            description=f"You have been kicked from the server. Reason: {reason}",
+            color=discord.Color.red()
+        )
+        embed_dm.set_footer(text=f"Kicked by {user.mention}")
+        victim = member
+        # Send the embedded message as a direct message to the kicked user
+        try:
+            await victim.send(embed=embed_dm)
+        except discord.Forbidden:
+            await ctx.send("Could not send a direct message to the user.")
+    else:
+        await ctx.send("You do not have permission to kick members.")
+
+
 # Event for when a member joins the server
 @bot.event
 async def on_member_join(member):
@@ -743,6 +785,7 @@ async def on_member_join(member):
         # Create an embedded message for member join event
         embed = discord.Embed(title="Member Joined", description=f"{member.mention} has joined the server! \nWelcome!", color=discord.Color.green())
         await log_channel.send(embed=embed)
+        embed = discord.Embed(title="Member Joined", description=f"{member.mention} has joined the server! \nWelcome!", color=discord.Color.green())
         await general_chat.send(embed=embed)
     else:
         general_chat.send(f"Cannot find {log_channel}")
