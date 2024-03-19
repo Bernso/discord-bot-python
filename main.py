@@ -462,6 +462,7 @@ async def delete_role(ctx, role_name: str):
 
 @bot.command(help="Creates a mentionable role with a name and color, and optionally assigns it to mentioned members.")
 async def create_role(ctx, name: str, color: discord.Color, *members: discord.Member):
+    
     guild = ctx.guild
     
     # Check if the role already exists
@@ -1147,7 +1148,8 @@ async def depression(ctx):
     else:
         await ctx.author.add_roles(role)
         await ctx.reply(f"Role '{role}' added to you!")
-    
+
+
 # Error handling
 @bot.event
 async def on_command_error(ctx, error):
@@ -1183,6 +1185,7 @@ async def search_command(ctx, command_name: str):
             await ctx.reply(f"The command **{command_name}** is available.")
     else:
         await ctx.reply(f"The command **{command_name}** is not available.")
+
 
 
 
