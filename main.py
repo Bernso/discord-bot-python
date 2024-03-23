@@ -1078,7 +1078,7 @@ async def on_member_update(before, after):
             await channel.send(embed=embed)
 
 
-@bot.event
+@bot.event #poggers
 async def on_guild_role_create(role):
     # Get the moderator who created the role
     moderator = role.guild.get_member(role.guild.owner_id)
