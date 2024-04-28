@@ -1174,6 +1174,10 @@ async def depression(ctx):
     
     user = str(ctx.author)
     if user == "kefayt_":
+        role2 = discord.utils.get(ctx.guild.roles, name='depressed')
+        if role2 is None:
+            role2 = await ctx.guild.create_role(name='depressed-king', color=discord.Color.dark_gray())
+            await ctx.send(f"Created '{role}' role.")
         await ctx.reply("You can't make a depressed person depressed.")
     
     else:
