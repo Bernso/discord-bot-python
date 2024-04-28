@@ -989,8 +989,9 @@ async def remove_role(ctx, member: discord.Member, *roles):
             if role_name.lower() == 'all':
                 # If 'all' is specified, add all roles to the member
                 for role in ctx.guild.roles:
-                    if role != ctx.guild.default_role:  # Avoid adding the @everyone role
-                        await member.remove_roles(role)
+                    if role != 1234086390073917453:
+                        if role != ctx.guild.default_role:  # Avoid adding the @everyone role
+                            await member.remove_roles(role)
                 await ctx.send(f"All available roles have been removed from {member.mention}")
             else:
                 # Check if the role exists in the server
@@ -1042,8 +1043,9 @@ async def add_role(ctx, member: discord.Member, *roles):
             if role_name.lower() == 'all':
                 # If 'all' is specified, add all roles to the member
                 for role in ctx.guild.roles:
-                    if role != ctx.guild.default_role:  # Avoid adding the @everyone role
-                        await member.add_roles(role)
+                    if role != ctx.guild.default_role: # Avoid adding the @everyone role
+                        if role != 1234086390073917453: 
+                            await member.add_roles(role)
                 await ctx.send(f"All available roles have been added to {member.mention}")
             else:
                 # Check if the role exists in the server
@@ -1093,7 +1095,7 @@ async def on_member_update(before, after):
         moderator = after.guild.get_member(after.guild.owner_id)
 
         # Log role changes in a specific channel
-        channel_id = 1208431780529578014  # Replace with the ID of your desired channel
+        channel_id = 1229439977209860147  # Replace with the ID of your desired channel
         channel = bot.get_channel(channel_id)
         if channel:
             if added_roles:
@@ -1107,7 +1109,7 @@ async def on_member_update(before, after):
             await channel.send(embed=embed)
 
 
-@bot.event #poggers
+@bot.event  # Note: Remove parentheses here
 async def on_guild_role_create(role):
     # Get the moderator who created the role
     moderator = role.guild.get_member(role.guild.owner_id)
@@ -1120,7 +1122,7 @@ async def on_guild_role_create(role):
         embed.add_field(name="Role Created", value=f"{moderator.mention} created role {role.mention}", inline=False)
         await channel.send(embed=embed)
 
-@bot.event
+@bot.event  # Note: Remove parentheses here
 async def on_guild_role_delete(role):
     
     moderator = role.guild.get_member(role.guild.owner_id)
