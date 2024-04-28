@@ -1,4 +1,4 @@
-/.env
-start.bat
-/.venv
+.env
+level.db
 message_records.pkl
+.venv/

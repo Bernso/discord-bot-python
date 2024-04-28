@@ -161,24 +161,25 @@ async def send_message_history(message, message_records):
 # Main entry point
 def main():
     # Prompt user to open message records file when space bar is pressed
-    while True:
-        key_input = input("Type 1 to open the message records file: ")
-        if key_input.lower() == '1':
-            try:
-                with open(RECORDS_FILENAME, 'rb') as file:
-                    message_records = pickle.load(file)
-                print("Message records file opened successfully!")
-                print("Contents:")
-                for record in message_records:
-                    print(record)
-            except FileNotFoundError:
-                print("Message records file not found.")
-        else: 
-            print("Exiting...")
-            #sleep(1)
-            os.system("cls")
-            print("Exited")
-            break
+    
+    key_input = input("Type 1 to open the message records file: ")
+    if key_input.lower() == '1':
+        try:
+            with open(RECORDS_FILENAME, 'rb') as file:
+                message_records = pickle.load(file)
+            print("Message records file opened successfully!")
+            print("Contents:")
+            for record in message_records:
+                print(record)
+        except FileNotFoundError:
+            print("Message records file not found.")
+        input()
+    else: 
+        print("Exiting...")
+        #sleep(1)
+        os.system("cls")
+        print("Exited")
+        
 
    
     bot.run(TOKEN)
