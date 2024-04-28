@@ -734,6 +734,17 @@ async def ban(ctx, member: discord.Member, *, reason=None):
         # If the user doesn't have the necessary permissions, reply with an error message
         await ctx.send("You don't have permission to use this command.")
 
+@bot.command(help = "Kicks the user inputed from the current server.")
+async def kick(ctx, member: discord.Member, *, reason=None):
+    # Check if the user invoking the command has the necessary permissions
+    if ctx.author.guild_permissions.kick_members:
+        # Kick the member
+        await member.kick(reason=reason)
+        # Send a confirmation message
+        await ctx.send(f"{member.mention} has been kicked from the server.")
+    else:
+        # If the user doesn't have the necessary permissions, reply with an error message
+        await ctx.send("You don't have permission to use this command.")
 
 # Event for when a member joins the server
 @bot.event
