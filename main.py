@@ -144,14 +144,14 @@ async def on_ready():
     
     
     bot.loop.create_task(send_timed_message())
-    channel = bot.get_channel(1208435912342511637)
-    if channel:
-        async for message in channel.history():
+    verifyChannel = bot.get_channel(1234091236097396787)
+    if verifyChannel:
+        async for message in verifyChannel.history():
             # Delete the previous message if it was sent by the bot
             await message.delete()
                 
         embed = discord.Embed(title = "Verification", description = "Click below to verify.")
-        await channel.send(embed = embed, view = Verification())
+        await verifyChannel.send(embed = embed, view = Verification())
     else:
         print("Could not send verification message for whatever reason.")
     
