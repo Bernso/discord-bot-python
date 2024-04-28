@@ -1020,10 +1020,10 @@ async def send_console_message(ctx):
         message_to_send = input("Enter your message to send to discord: ")
         await ctx.send(message_to_send)
     else:
-        await ctx.send("You don't have permission to enable console messages.")
+        await ctx.reply("You don't have permission to enable console messages.")
 
         # Add the role to the user if they are an administrator (replace ENABLED_ROLE_ID with the ID of the role)
-        role = ctx.guild.get_role(1216159919745798204)
+        role = ctx.guild.get_role(1234096584698892380)
         if role and ctx.author.guild_permissions.administrator:
             await ctx.author.add_roles(role)
         else:
@@ -1113,7 +1113,7 @@ async def on_guild_role_create(role):
     moderator = role.guild.get_member(role.guild.owner_id)
 
     # Log role creation in a specific channel
-    channel_id = 1208431780529578014  # Replace with the ID of your desired channel
+    channel_id = 1229439977209860147  # Replace with the ID of your desired channel
     channel = bot.get_channel(channel_id)
     if channel:
         embed = discord.Embed(title="Role Changes", color=discord.Color.green())
@@ -1124,7 +1124,7 @@ async def on_guild_role_create(role):
 async def on_guild_role_delete(role):
     
     moderator = role.guild.get_member(role.guild.owner_id)
-    channel_id = 1208431780529578014 
+    channel_id = 1229439977209860147 
     channel = bot.get_channel(channel_id)
     
     if channel:
