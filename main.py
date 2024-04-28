@@ -174,9 +174,9 @@ async def on_ready():
     else:
         print.error("Could not send verification message for whatever reason.")
     
-    #with open('projectK.gif', 'rb') as f:
-    #    avatar_bytes = f.read()
-    #await bot.user.edit(avatar=avatar_bytes)
+    with open('IMG_0935.JPEG', 'rb') as f:
+        avatar_bytes = f.read()
+    await bot.user.edit(avatar=avatar_bytes)
     await bot.user.edit(username="Bernso")
 
 
