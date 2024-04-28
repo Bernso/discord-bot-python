@@ -951,21 +951,6 @@ async def unmute(ctx, member: discord.Member):
 async def on_message(message: discord.Message) -> None:
     if message.author == bot.user:
         return
-    else:
-        try:
-            cur.execute(f"SELECT * FROM GUILD_{message.guild.id} WHERE user_id={message.author.id}")
-            result = cur.fetchone()
-
-            if result is not None and result[1] == 99:
-                await message.channel.send(f"{message.author.mention} advanced to lvl {result[2] + 1}")
-                cur.execute(f"UPDATE GUILD_{message.guild.id} SET exp=0, lvl={result[2] + 1} WHERE user_id={message.author.id}")
-                con.commit()
-            else:
-                cur.execute(f"UPDATE GUILD_{message.guild.id} SET exp={result[1] + 1} WHERE user_id={message.author.id}")
-                con.commit()
-
-        except sqlite3.OperationalError:
-            pass
 
     # Record the message details
     message_record = {
@@ -999,7 +984,24 @@ async def on_message(message: discord.Message) -> None:
         else:
             print.warning("Invalid channel ID")
 
-    
+    if message.author == bot.user:
+        return
+    else:
+        try:
+            if message.channel != 'Direct Message with Unknown User':
+                cur.execute(f"SELECT * FROM GUILD_{message.guild.id} WHERE user_id={message.author.id}")
+                result = cur.fetchone()
+
+                if result is not None and result[1] == 99:
+                    await message.channel.send(f"{message.author.mention} advanced to lvl {result[2] + 1}")
+                    cur.execute(f"UPDATE GUILD_{message.guild.id} SET exp=0, lvl={result[2] + 1} WHERE user_id={message.author.id}")
+                    con.commit()
+                else:
+                    cur.execute(f"UPDATE GUILD_{message.guild.id} SET exp={result[1] + 1} WHERE user_id={message.author.id}")
+                    con.commit()
+
+        except sqlite3.OperationalError:
+            pass
     
 
 @bot.command(name = "console-embed", help="You'll be able to send messages through the console if you have the appropriate permissions")
