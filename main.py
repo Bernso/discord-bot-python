@@ -1,6 +1,6 @@
 from logging import warn
 import discord
-from discord.ext import commands
+from discord.ext import commands, tasks
 from discord import Embed
 import random
 import pickle
@@ -12,6 +12,7 @@ import sys
 import sqlite3
 import subprocess
 import loguru
+import time
 
 
 os.system('cls')
@@ -23,6 +24,7 @@ TOKEN = os.getenv('ENVDISCORD_TOKEN')
 ENABLED_USER_ID = 712946563508469832 # My user id
 BOT_LOG_CHANNEL_ID = 1234100559431077939
 VERIFIED_ROLE_NAME = "Verified"
+
 
 class print:
     def info(message):
@@ -148,11 +150,7 @@ bot = commands.Bot(command_prefix='.', intents=intents, help_command=CustomHelpC
 
 
 
-#async def main():
-#    initial_extensions = ['xp']  # Replace 'your_cog_module' with the filename of your cog module
-#    for extension in initial_extensions:
-#        await bot.load_extension(extension)
-#asyncio.run(main())
+
 
 
 @bot.event
@@ -177,9 +175,48 @@ async def on_ready():
     with open('IMG_0935.JPEG', 'rb') as f:
         avatar_bytes = f.read()
         f.close()
-    await bot.user.edit(avatar=avatar_bytes)
-    await bot.user.edit(username="bot-Bernso")
+    #await bot.user.edit(avatar=avatar_bytes)
+    #await bot.user.edit(username="bot-Bernso")
+    spam_check.start()
 
+
+@tasks.loop(seconds=10)
+async def spam_check():
+    # Define a dictionary to store the last message timestamp for each user
+    last_message_time = {}
+    for guild in bot.guilds:
+        for member in guild.members:
+            if not member.bot:
+                if is_spamming(member.id, last_message_time):
+                    # Check if the muted role exists in the server
+                    muted_role = discord.utils.get(guild.roles, id=1234095998008299632)
+                    if muted_role is not None:
+                        # Assign the muted role to the spamming user
+                        await member.add_roles(muted_role)
+                        print.info(f"{member} has been muted for spamming.")
+                        channel = guild.get_channel(BOT_LOG_CHANNEL_ID)
+                        await channel.send(f"{member.mention} you have been muted for spamming, you will be unmuted in 1 minute")
+                        # Wait for 1 minute (60 seconds)
+                        await asyncio.sleep(60)
+                        # Remove the muted role after the duration expires
+                        await member.remove_roles(muted_role)
+                        print.info(f"{member} has been unmuted after 1 minute.")
+                        await channel.send(f"{member.mention} you have been unmuted")
+                    else:
+                        print.warning("Muted role not found in the server.")
+
+def is_spamming(user_id, last_message_time):
+    current_time = time.time()
+    if user_id in last_message_time:
+        # Calculate the time difference between the current time and the last message sent by the user
+        time_difference = current_time - last_message_time[user_id]
+        # Define the time frame for considering messages as spam (e.g., 5 seconds)
+        spam_time_frame = 0.3
+        if time_difference < spam_time_frame:
+            return True
+    # Update the last message timestamp for the user
+    last_message_time[user_id] = current_time
+    return False
 
 @bot.command(help = "Starts up the leveling system if it hasnt already.")
 async def init(ctx):
@@ -920,6 +957,32 @@ async def mute(ctx, member: discord.Member, duration: int):
     else:
         # If the user doesn't have the necessary permissions, reply an error message
         await ctx.reply("You don't have permission to use this command.")
+
+
+@bot.command(help="Unmute a user")
+async def unmute(ctx, member: discord.Member):
+    # Check if the user invoking the command has the necessary permissions
+    if ctx.author.guild_permissions.manage_roles:
+        # Get the muted role from the server
+        muted_role = discord.utils.get(ctx.guild.roles, name="Muted")
+
+        # If muted role doesn't exist, create it
+        if not muted_role:
+            muted_role = await ctx.guild.create_role(name="Muted")
+
+            # Loop through each channel in the server and deny the muted role permissions to reply messages
+            for channel in ctx.guild.channels:
+                await channel.set_permissions(muted_role, reply_messages=False)
+
+        # Add the muted role to the mentioned member
+        await member.remove_roles(muted_role)
+
+        # reply a message confirming the mute
+        await ctx.reply(f"{member.mention} has been unmuted")
+    else:
+        # If the user doesn't have the necessary permissions, reply an error message
+        await ctx.reply("You don't have permission to use this command.")
+
 
 @bot.event
 async def on_message(message: discord.Message) -> None:
