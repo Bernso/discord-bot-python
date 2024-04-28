@@ -1026,9 +1026,20 @@ async def remove_role(ctx, member: discord.Member, *roles):
 async def nein(ctx):
     await ctx.reply("9")
 
+@bot.command(name = "..", help = "Why are you speechless?")
+async def speechless(ctx):
+    await ctx.reply("Why are you speechless?")
+
 @bot.command(name = ".", help = "Why are you speechless?")
 async def speechless(ctx):
     await ctx.reply("Why are you speechless?")
+
+@bot.command(name = "...", help = "Why are you speechless?")
+async def speechless(ctx):
+    await ctx.reply("Why are you speechless?")
+
+
+
 
 @bot.command(name = "console-msg", help="You'll be able to send messages through the console if you have the appropriate permissions")
 async def send_console_message(ctx):
