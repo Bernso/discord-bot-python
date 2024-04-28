@@ -205,6 +205,7 @@ async def spam_check():
                     else:
                         print.warning("Muted role not found in the server.")
 
+
 def is_spamming(user_id, last_message_time):
     current_time = time.time()
     if user_id in last_message_time:
@@ -217,6 +218,7 @@ def is_spamming(user_id, last_message_time):
     # Update the last message timestamp for the user
     last_message_time[user_id] = current_time
     return False
+
 
 @bot.command(help = "Starts up the leveling system if it hasnt already.")
 async def init(ctx):
@@ -237,7 +239,6 @@ async def init(ctx):
 async def level_up_notification(user, level, channel):
     message = f"Congratulations {user.mention}! You've reached level {level}!"
     await channel.send(message)
-
 
 
 @bot.command(help="Edit a user's experience.\n For the <amount> of xp you can use 'reset' to reset the user's XP.")
