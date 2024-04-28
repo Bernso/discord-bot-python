@@ -177,48 +177,9 @@ async def on_ready():
         f.close()
     #await bot.user.edit(avatar=avatar_bytes)
     #await bot.user.edit(username="bot-Bernso")
-    spam_check.start()
 
+    
 
-@tasks.loop(seconds=10)
-async def spam_check():
-    # Define a dictionary to store the last message timestamp for each user
-    last_message_time = {}
-    for guild in bot.guilds:
-        for member in guild.members:
-            if not member.bot:
-                if member.id != 712946563508469832:
-                    if is_spamming(member.id, last_message_time):
-                        # Check if the muted role exists in the server
-                        muted_role = discord.utils.get(guild.roles, id=1234095998008299632)
-                        if muted_role is not None:
-                            # Assign the muted role to the spamming user
-                            await member.add_roles(muted_role)
-                            print.info(f"{member} has been muted for spamming.")
-                            channel = guild.get_channel(BOT_LOG_CHANNEL_ID)
-                            await channel.send(f"{member.mention} you have been muted for spamming, you will be unmuted in 1 minute")
-                            # Wait for 1 minute (60 seconds)
-                            await asyncio.sleep(60)
-                            # Remove the muted role after the duration expires
-                            await member.remove_roles(muted_role)
-                            print.info(f"{member} has been unmuted after 1 minute.")
-                            await channel.send(f"{member.mention} you have been unmuted")
-                        else:
-                            print.warning("Muted role not found in the server.")
-
-
-def is_spamming(user_id, last_message_time):
-    current_time = time.time()
-    if user_id in last_message_time:
-        # Calculate the time difference between the current time and the last message sent by the user
-        time_difference = current_time - last_message_time[user_id]
-        # Define the time frame for considering messages as spam (e.g., 5 seconds)
-        spam_time_frame = 0.3
-        if time_difference < spam_time_frame:
-            return True
-    # Update the last message timestamp for the user
-    last_message_time[user_id] = current_time
-    return False
 
 
 @bot.command(help = "Starts up the leveling system if it hasnt already.")
