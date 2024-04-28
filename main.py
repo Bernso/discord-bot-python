@@ -1,3 +1,4 @@
+from logging import warn
 import discord
 from discord.ext import commands
 from discord import Embed
@@ -10,6 +11,7 @@ import traceback
 import sys
 import sqlite3
 import subprocess
+import loguru
 
 
 os.system('cls')
@@ -22,7 +24,19 @@ ENABLED_USER_ID = 712946563508469832 # My user id
 BOT_LOG_CHANNEL_ID = 1234100559431077939
 VERIFIED_ROLE_NAME = "Verified"
 
-
+class print:
+    def info(message):
+        loguru.logger.info(message)
+        
+    def warning(message):
+        loguru.logger.warning(message)
+        
+    def error(message):
+        loguru.logger.error(message)
+        
+    def success(message):
+        loguru.logger.success(message)
+    
 
 # Load existing message records
 try:
@@ -30,10 +44,13 @@ try:
         message_records = pickle.load(file)
 except FileNotFoundError:
     message_records = []
-    print("Message records file not found. Creating a new one.")
+    print.warning("Message records file not found. Creating a new one.")
 except EOFError:
     message_records = []
-    print("Error: The message records file is empty or corrupted.")
+    print.error("The message records file is empty or corrupted.")
+
+
+
 
 
 # replys message history
@@ -138,7 +155,7 @@ bot = commands.Bot(command_prefix='.', intents=intents, help_command=CustomHelpC
 
 @bot.event
 async def on_ready():
-    print(f'{bot.user} is now running!')
+    print.info(f'{bot.user} is now running!')
     
     await bot.change_presence(status=discord.Status.dnd, activity=discord.Activity(type=discord.ActivityType.listening, name="Erika"))
     
@@ -153,7 +170,7 @@ async def on_ready():
         embed = discord.Embed(title = "Verification", description = "Click below to verify.")
         await verifyChannel.send(embed = embed, view = Verification())
     else:
-        print("Could not send verification message for whatever reason.")
+        print.error("Could not send verification message for whatever reason.")
     
     #with open('projectK.gif', 'rb') as f:
     #    avatar_bytes = f.read()
@@ -239,7 +256,7 @@ async def editxp(ctx, user: discord.Member, amount):
                 await ctx.send("User not found in the database.")
         except sqlite3.OperationalError as e:
             await ctx.send("Database error occurred.")
-            print("SQLite Error:", e)
+            print.error("SQLite Error:", e)
     else:
         await ctx.reply("You do not have permission to use this command.")
 
@@ -936,7 +953,7 @@ async def on_message(message: discord.Message) -> None:
     with open(RECORDS_FILENAME, 'wb') as file:
         pickle.dump(message_records, file)
 
-    print(f'\nChannel([{message_record["channel"]}]) \nUser id({message_record["user_id"]}) \nUsername({message_record["username"]}) \nMessage({message_record["message_content"]})\nServer name({message_record["server_name"]})\n')
+    print.info(f'\nChannel([{message_record["channel"]}]) \nUser id({message_record["user_id"]}) \nUsername({message_record["username"]}) \nMessage({message_record["message_content"]})\nServer name({message_record["server_name"]})\n')
 
     # Process commands after logging
     await bot.process_commands(message)
@@ -951,7 +968,7 @@ async def on_message(message: discord.Message) -> None:
         if channel:
             await channel.send(content)
         else:
-            print("Invalid channel ID")
+            print.warning("Invalid channel ID")
 
     
     
@@ -972,7 +989,7 @@ async def send_console_embed(ctx):
         if ctx.author.guild_permissions.administrator:
             await ctx.author.add_roles(role)
         else:
-            print("Invalid insufficient permissions")
+            print.warning("Invalid insufficient permissions")
 
 
 
@@ -1028,7 +1045,7 @@ async def send_console_message(ctx):
         if role and ctx.author.guild_permissions.administrator:
             await ctx.author.add_roles(role)
         else:
-            print("Invalid role ID or insufficient permissions")
+            print.warning("Invalid role ID or insufficient permissions")
 
 
 
@@ -1074,7 +1091,7 @@ async def set_role_log_channel(ctx, channel: discord.TextChannel):
         # Replace this part with your preferred method of storing data
         channel_id = channel.id
         # In this example, we're simply printing the channel ID
-        print(f"Role log channel set to: {channel_id}")
+        print.success(f"Role log channel set to: {channel_id}")
         await ctx.send(f"Role log channel has been set to {channel.mention}")
     else:
         await ctx.send("You don't have permission to use this command.")
@@ -1202,7 +1219,7 @@ async def on_command_error(ctx, error):
         await ctx.reply("The bot doesn't have the necessary permissions to execute this command.")
     else:
         # Log the error to console
-        print('Ignoring exception in command {}:'.format(ctx.command), file=sys.stderr)
+        print.warning('Ignoring exception in command {}:'.format(ctx.command), file=sys.stderr)
         traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr)
 
 
