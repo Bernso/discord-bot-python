@@ -2,3 +2,8 @@
 level.db
 message_records.pkl
 .venv/
+build
+.vs
+.vsconfig
+.pytest_cache
+__pycache__
