@@ -391,7 +391,7 @@ async def start_verify(ctx):
     else:
         await ctx.reply("You cannot use this command. Required = Administrator")
 
-@bot.command(name='runfile')
+@bot.command(name='runfile', help = "Do not put .py after the file name as it will not work\nThe current working files are:\n- hello.py\n- fakehack.py\n- PassGen.py")
 async def run_file(ctx, file_name: str):
     try:
         # Execute the Python file and capture its output
@@ -400,6 +400,20 @@ async def run_file(ctx, file_name: str):
 
         # Send the output as a message
         await ctx.send(f"Output:\n```{output}```")
+    except Exception as e:
+        await ctx.send(f"An error occurred: {str(e)}")
+
+@bot.command(name='dm_runfile', help = "Do not put .py after the file name as it will not work\nThe current working files are:\n- hello.py\n- fakehack.py\n- PassGen.py")
+async def dm_run_file(ctx, file_name: str):
+    try:
+        user = ctx.author
+        # Execute the Python file and capture its output
+        result = subprocess.run(['python', f'{file_name}.py'], capture_output=True, text=True)
+        output = result.stdout
+
+        # Send the output as a message
+        await user.send(f"Output:\n```{output}```")
+        await ctx.send(f"{user.mention} check your dms")
     except Exception as e:
         await ctx.send(f"An error occurred: {str(e)}")
 
