@@ -19,7 +19,7 @@ load_dotenv()
 RECORDS_FILENAME = os.getenv('ENVRECORDS_FILENAME')
 TOKEN = os.getenv('ENVDISCORD_TOKEN')
 ENABLED_USER_ID = 712946563508469832 # My user id
-BOT_LOG_CHANNEL_ID = 1229439977209860147
+BOT_LOG_CHANNEL_ID = 1234100559431077939
 VERIFIED_ROLE_NAME = "Verified"
 
 
@@ -1095,7 +1095,7 @@ async def on_member_update(before, after):
         moderator = after.guild.get_member(after.guild.owner_id)
 
         # Log role changes in a specific channel
-        channel_id = 1229439977209860147  # Replace with the ID of your desired channel
+        channel_id = 1234100559431077939  # Replace with the ID of your desired channel
         channel = bot.get_channel(channel_id)
         if channel:
             if added_roles:
