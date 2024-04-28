@@ -639,7 +639,7 @@ async def calc(ctx, *, equation: str):
     except Exception as e:
         await ctx.reply(f"Invalid equation or operation. Error: {str(e)}")
 
-bot.command(help = "Replies to your message with the state of my internet")
+@bot.command(help = "Replies to your message with the state of my internet")
 async def internet_state(ctx):
     await ctx.reply("Internet is online")
 
@@ -733,6 +733,7 @@ async def ban(ctx, member: discord.Member, *, reason=None):
     else:
         # If the user doesn't have the necessary permissions, reply with an error message
         await ctx.send("You don't have permission to use this command.")
+
 
 # Event for when a member joins the server
 @bot.event
