@@ -1179,9 +1179,19 @@ async def change_name(ctx, user, nickname):
         else:
             await ctx.send(f"User '{user}' does not exist.")
     else:
-        await ctx.send("You don't have permission to use this command.")
+        await ctx.reply("You don't have permission to use this command.")
 
-
+@bot.command(name='remove_nickname', help='Removes a nickname from the given user')
+async def remove_nickname(ctx, user):
+    if ctx.author.guild_permissions.administrator:
+        user = discord.utils.get(ctx.guild.members, name=user)
+        if user:
+            await user.edit(nick=None)
+            await ctx.send(f"Removed nickname of {user.mention}")
+        else:
+            await ctx.send(f"User '{user}' does not exist.")
+    else:
+        ctx.reply("You do not have permission to use this command.")
 
 @bot.command(help="Delete a specified number of messages in the channel. \nAlways add 1 to the count when using this command as your message counts as a message for the bot to delete.\nThis can only delete up to 100 messages (sadly)")
 async def purge(ctx, amount: int):
