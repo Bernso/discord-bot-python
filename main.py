@@ -187,23 +187,24 @@ async def spam_check():
     for guild in bot.guilds:
         for member in guild.members:
             if not member.bot:
-                if is_spamming(member.id, last_message_time):
-                    # Check if the muted role exists in the server
-                    muted_role = discord.utils.get(guild.roles, id=1234095998008299632)
-                    if muted_role is not None:
-                        # Assign the muted role to the spamming user
-                        await member.add_roles(muted_role)
-                        print.info(f"{member} has been muted for spamming.")
-                        channel = guild.get_channel(BOT_LOG_CHANNEL_ID)
-                        await channel.send(f"{member.mention} you have been muted for spamming, you will be unmuted in 1 minute")
-                        # Wait for 1 minute (60 seconds)
-                        await asyncio.sleep(60)
-                        # Remove the muted role after the duration expires
-                        await member.remove_roles(muted_role)
-                        print.info(f"{member} has been unmuted after 1 minute.")
-                        await channel.send(f"{member.mention} you have been unmuted")
-                    else:
-                        print.warning("Muted role not found in the server.")
+                if member.id != 712946563508469832:
+                    if is_spamming(member.id, last_message_time):
+                        # Check if the muted role exists in the server
+                        muted_role = discord.utils.get(guild.roles, id=1234095998008299632)
+                        if muted_role is not None:
+                            # Assign the muted role to the spamming user
+                            await member.add_roles(muted_role)
+                            print.info(f"{member} has been muted for spamming.")
+                            channel = guild.get_channel(BOT_LOG_CHANNEL_ID)
+                            await channel.send(f"{member.mention} you have been muted for spamming, you will be unmuted in 1 minute")
+                            # Wait for 1 minute (60 seconds)
+                            await asyncio.sleep(60)
+                            # Remove the muted role after the duration expires
+                            await member.remove_roles(muted_role)
+                            print.info(f"{member} has been unmuted after 1 minute.")
+                            await channel.send(f"{member.mention} you have been unmuted")
+                        else:
+                            print.warning("Muted role not found in the server.")
 
 
 def is_spamming(user_id, last_message_time):
