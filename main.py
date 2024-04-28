@@ -19,7 +19,7 @@ load_dotenv()
 RECORDS_FILENAME = os.getenv('ENVRECORDS_FILENAME')
 TOKEN = os.getenv('ENVDISCORD_TOKEN')
 ENABLED_USER_ID = 712946563508469832 # My user id
-BOT_LOG_CHANNEL_ID = 1208431780529578014
+BOT_LOG_CHANNEL_ID = 1229439977209860147
 VERIFIED_ROLE_NAME = "Verified"
 
 
@@ -375,8 +375,8 @@ class Verification(discord.ui.View):
         super().__init__(timeout = None)
     @discord.ui.button(label="Verify",custom_id = "Verify",style = discord.ButtonStyle.success)
     async def verify(self, interaction, button):
-        verified = 1189910015415435324
-        unverified = 1189910014152941688
+        verified = 1234090799571013712
+        unverified = 1234090964549767212
         user = interaction.user
         if verified not in [y.id for y in user.roles]:
             await user.remove_roles(user.guild.get_role(unverified))
@@ -765,7 +765,7 @@ async def kick(ctx, member: discord.Member, *, reason=None):
 async def on_member_join(member):
     # Get the log channel
     log_channel = bot.get_channel(BOT_LOG_CHANNEL_ID)
-    general_chat = bot.get_channel(1047658455172911116)
+    general_chat = bot.get_channel(1225352074955591713)
     if log_channel:
         # Create an embedded message for member join event
         embed = discord.Embed(title="Member Joined", description=f"{member.mention} has joined the server! \nWelcome!", color=discord.Color.green())
