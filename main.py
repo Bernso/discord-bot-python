@@ -178,7 +178,7 @@ async def on_ready():
         avatar_bytes = f.read()
         f.close()
     await bot.user.edit(avatar=avatar_bytes)
-    await bot.user.edit(username="Bernso")
+    await bot.user.edit(username="bot-Bernso")
 
 
 @bot.command(help = "Starts up the leveling system if it hasnt already.")
@@ -1166,7 +1166,20 @@ async def on_guild_role_delete(role):
         await channel.send(embed=embed)
 
 
-
+@bot.command(name='change_name', help='Change the nickname of the user\n\nTHE USER MUST BE:\n- user ID\nOR\n- user name')
+async def change_name(ctx, user, nickname):
+    # Check if the user invoking the command has the necessary permissions
+    if ctx.author.guild_permissions.administrator:
+        # Check if the user exists in the server
+        user = discord.utils.get(ctx.guild.members, name=user)
+        if user:
+            # Change the nickname of the user
+            await user.edit(nick=nickname)
+            await ctx.send(f"Changed nickname of {user.mention} to {nickname}")
+        else:
+            await ctx.send(f"User '{user}' does not exist.")
+    else:
+        await ctx.send("You don't have permission to use this command.")
 
 
 
