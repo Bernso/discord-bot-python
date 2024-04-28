@@ -1146,7 +1146,7 @@ async def on_guild_role_create(role):
     moderator = role.guild.get_member(role.guild.owner_id)
 
     # Log role creation in a specific channel
-    channel_id = 1229439977209860147  # Replace with the ID of your desired channel
+    channel_id = 1234100559431077939  # Replace with the ID of your desired channel
     channel = bot.get_channel(channel_id)
     if channel:
         embed = discord.Embed(title="Role Changes", color=discord.Color.green())
@@ -1157,7 +1157,7 @@ async def on_guild_role_create(role):
 async def on_guild_role_delete(role):
     
     moderator = role.guild.get_member(role.guild.owner_id)
-    channel_id = 1229439977209860147 
+    channel_id = 1234100559431077939 
     channel = bot.get_channel(channel_id)
     
     if channel:
