@@ -637,11 +637,11 @@ async def kys(ctx):
 async def bye(ctx):
     await ctx.reply('Never come back! :wave:')
 
-@bot.command(help = 'Replies to your message')
+@bot.command(help = 'Replies to your message', name = 'NUH-UH')
 async def nuh_uh(ctx):
     await ctx.reply('YUH-UH')
 
-@bot.command(help = 'Replies to your message')
+@bot.command(help = 'Replies to your message', name='YUH-UH')
 async def yuh_uh(ctx):
     await ctx.reply('NUH-UH')
 
