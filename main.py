@@ -76,11 +76,11 @@ async def reply_message_history(message, message_records):
 # Function to send the timed message
 async def send_timed_message():
     await bot.wait_until_ready()
-    channel = bot.get_channel(1047658455172911116)
+    channel = bot.get_channel(1225352074955591713)
     while not bot.is_closed():
         # Send your message here
         await asyncio.sleep(800)
-        await channel.send("Welcome, this is my place where I experiement with my bot and try experimenting on things!")
+        await channel.send("Hi")
         # Wait for 1 hour (3600 seconds) 3 hours (10800)
         await asyncio.sleep(10000)
 
