@@ -946,7 +946,7 @@ async def on_message(message: discord.Message) -> None:
         content = message.content.replace("!console_message", "").strip()
         
         # Send the extracted content to a specific channel (replace channel_id with the desired channel ID)
-        channel_id = 1210278728328941628
+        channel_id = 1225352074955591713
         channel = bot.get_channel(channel_id)
         if channel:
             await channel.send(content)
@@ -1004,8 +1004,11 @@ async def remove_role(ctx, member: discord.Member, *roles):
         # If the user doesn't have the necessary permissions, reply with an error message
         await ctx.reply("You don't have permission to use this command.")
 
+@bot.command(name = 'NEIN', help = "NEIN")
+async def nein(ctx):
+    await ctx.reply("9")
 
-@bot.command(name = "..", help = "Why are you speechless?")
+@bot.command(name = ".", help = "Why are you speechless?")
 async def speechless(ctx):
     await ctx.reply("Why are you speechless?")
 
