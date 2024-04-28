@@ -176,6 +176,7 @@ async def on_ready():
     
     with open('IMG_0935.JPEG', 'rb') as f:
         avatar_bytes = f.read()
+        f.close()
     await bot.user.edit(avatar=avatar_bytes)
     await bot.user.edit(username="Bernso")
 
