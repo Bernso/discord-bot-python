@@ -45,6 +45,8 @@ try:
 except FileNotFoundError:
     message_records = []
     print.warning("Message records file not found. Creating a new one.")
+    yes = open('message_records.pkl', 'w')
+    yes.close()
 except EOFError:
     message_records = []
     print.error("The message records file is empty or corrupted.")
@@ -1175,11 +1177,11 @@ async def purge(ctx, amount: int):
         await ctx.message.delete()
 
         # Send initial message indicating the start of message deletion
-        progress_message = await ctx.send(f"Deleting messages... 0/{amount-1} messages deleted so far.")
+        progress_message = await ctx.send(f"Deleting messages... 0/{amount} messages deleted so far.")
         
         # Fetch messages to delete
         messages_to_delete = []
-        async for message in ctx.channel.history(limit=amount):
+        async for message in ctx.channel.history(limit=amount + 1):
             if message.id != progress_message.id:
                 messages_to_delete.append(message)
         
@@ -1187,7 +1189,7 @@ async def purge(ctx, amount: int):
         await ctx.channel.delete_messages(messages_to_delete)
 
         # Send final message indicating completion of message deletion
-        await progress_message.edit(content=f"Deleted {len(messages_to_delete)} out of {amount-1} messages. Command ran by: {ctx.author.mention}")
+        await progress_message.edit(content=f"Deleted {len(messages_to_delete)} out of {amount} messages. Command ran by: {ctx.author.mention}")
     else:
         # If the user doesn't have the necessary permissions, reply with an error message
         await ctx.reply("You don't have permission to use this command.")
