@@ -1181,7 +1181,7 @@ async def change_name(ctx, user, nickname):
     else:
         await ctx.reply("You don't have permission to use this command.")
 
-@bot.command(name='remove_nickname', help='Removes a nickname from the given user')
+@bot.command(name='remove_name', help='Removes a nickname from the given user')
 async def remove_nickname(ctx, user):
     if ctx.author.guild_permissions.administrator:
         user = discord.utils.get(ctx.guild.members, name=user)
