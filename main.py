@@ -613,7 +613,11 @@ async def quote(ctx):
     elif author == "kefayt_":
         await ctx.reply('"Wake up with a stinky finger."')
     elif author == ".bernso":
-        await ctx.reply("TBATE < World After The Fall")
+        await ctx.reply("TBATE > World After The Fall")
+    elif author == "2314937462561":
+        await ctx.reply("Your gay.")
+    elif author == "ceo_of_india425":
+        await ctx.reply("Bro does not own india :pray:")
     else:
         await ctx.reply("Dm @.bernso to get your own quote.")
     
