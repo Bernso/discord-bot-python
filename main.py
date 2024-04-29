@@ -59,6 +59,7 @@ except EOFError:
 
 # replys message history
 async def reply_message_history(message, message_records):
+    
     # Extract message content, username, and server name for each record
     message_history = '\n'.join([f"{record.get('message_content', 'Unknown')} - {record.get('username', 'Unknown')} ({record.get('server_name', 'Unknown')})" for record in message_records])
     
@@ -562,35 +563,36 @@ async def hello(ctx):
 
 @bot.command(help="Replys the message history of the server (I really wish I didnt add this feature)")
 async def history(ctx):
-    # Load message records from the file
-    try:
-        with open(RECORDS_FILENAME, 'rb') as file:
-            message_records = pickle.load(file)
-    except FileNotFoundError:
-        await ctx.reply("Message records file not found.")
-        return
+    if ctx.author.guild_permissions.administrator:
+        # Load message records from the file
+        try:
+            with open(RECORDS_FILENAME, 'rb') as file:
+                message_records = pickle.load(file)
+        except FileNotFoundError:
+            await ctx.reply("Message records file not found.")
+            return
 
-    # Split message records into chunks
-    chunk_size = 10  # Adjust the chunk size as needed
-    chunks = [message_records[i:i+chunk_size] for i in range(0, len(message_records), chunk_size)]
+        # Split message records into chunks
+        chunk_size = 10  # Adjust the chunk size as needed
+        chunks = [message_records[i:i+chunk_size] for i in range(0, len(message_records), chunk_size)]
 
-    # Send each chunk as a separate embed
-    for i, chunk in enumerate(chunks, start=1):
-        # Create an embed object for the chunk
-        embed = discord.Embed(title=f"Message History (Chunk {i})", color=discord.Color.blue())
+        # Send each chunk as a separate embed
+        for i, chunk in enumerate(chunks, start=1):
+            # Create an embed object for the chunk
+            embed = discord.Embed(title=f"Message History (Chunk {i})", color=discord.Color.blue())
 
-        # Add message history to the embed
-        for record in chunk:
-            message_content = record.get('message_content', 'Unknown')
-            username = record.get('username', 'Unknown')
-            server_name = record.get('server_name', 'Unknown')
-            embed.add_field(name="Message", value=f"**{username}** ({server_name}): {message_content}", inline=False)
+            # Add message history to the embed
+            for record in chunk:
+                message_content = record.get('message_content', 'Unknown')
+                username = record.get('username', 'Unknown')
+                server_name = record.get('server_name', 'Unknown')
+                embed.add_field(name="Message", value=f"**{username}** ({server_name}): {message_content}", inline=False)
 
-        # Send the embed message
-        await ctx.send(embed=embed)
+            # Send the embed message
+            await ctx.send(embed=embed)
 
-    # Reply to the user to inform them that all message history has been sent
-    await ctx.reply("All message history has been uploaded :thumbsup:")
+        # Reply to the user to inform them that all message history has been sent
+        await ctx.reply("All message history has been uploaded :thumbsup:")
 
 @bot.command(help = "Vishwa's favourite things.")
 async def vishwa_bestpicks(ctx):
