@@ -793,6 +793,7 @@ async def on_member_join(member):
     # Get the log channel
     log_channel = bot.get_channel(BOT_LOG_CHANNEL_ID)
     general_chat = bot.get_channel(1225352074955591713)
+    member.add_roles(discord.utils.get(member.guild.roles, name="Unverified"))
     if log_channel:
         # Create an embedded message for member join event
         embed = discord.Embed(title="Member Joined", description=f"{member.mention} has joined the server! \nWelcome!", color=discord.Color.green())
