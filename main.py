@@ -497,44 +497,44 @@ async def delete_role(ctx, role_name: str):
 
 @bot.command(help="Creates a mentionable role with a name and color, and optionally assigns it to mentioned members.")
 async def create_role(ctx, name: str, color: discord.Color, *members: discord.Member):
-    
-    guild = ctx.guild
-    
-    # Check if the role already exists
-    if discord.utils.get(guild.roles, name=name):
-        embed = discord.Embed(
-            title="Error",
-            description=f"Role '{name}' already exists.",
-            color=discord.Color.red()
-        )
-        await ctx.send(embed=embed)
-        return
-    
-    # Create the role with the specified name and color
-    new_role = await guild.create_role(name=name, color=color, mentionable=True)
-    
-    # Set the position of the new role
-    await new_role.edit(position=1)
-    
-    # Assign the role to each member
-    for member in members:
-        await member.add_roles(new_role)
-    
-    if members:
-        member_list = ", ".join(member.mention for member in members)
-        embed = discord.Embed(
-            title="Role Created",
-            description=f"Role '{name}' created and assigned to {member_list} by {ctx.author.mention}.",
-            color=discord.Color.green()
-        )
-    else:
-        embed = discord.Embed(
-            title="Role Created",
-            description=f"Role '{name}' created by {ctx.author.mention}.",
-            color=discord.Color.green()
-        )
+    if ctx.author.guild_permissions.administrator:
+        guild = ctx.guild
         
-    await ctx.send(embed=embed)
+        # Check if the role already exists
+        if discord.utils.get(guild.roles, name=name):
+            embed = discord.Embed(
+                title="Error",
+                description=f"Role '{name}' already exists.",
+                color=discord.Color.red()
+            )
+            await ctx.send(embed=embed)
+            return
+        
+        # Create the role with the specified name and color
+        new_role = await guild.create_role(name=name, color=color, mentionable=True)
+        
+        # Set the position of the new role
+        await new_role.edit(position=1)
+        
+        # Assign the role to each member
+        for member in members:
+            await member.add_roles(new_role)
+        
+        if members:
+            member_list = ", ".join(member.mention for member in members)
+            embed = discord.Embed(
+                title="Role Created",
+                description=f"Role '{name}' created and assigned to {member_list} by {ctx.author.mention}.",
+                color=discord.Color.green()
+            )
+        else:
+            embed = discord.Embed(
+                title="Role Created",
+                description=f"Role '{name}' created by {ctx.author.mention}.",
+                color=discord.Color.green()
+            )
+            
+        await ctx.send(embed=embed)
 
 
 @bot.command(help = "This is just a test command, it will create embed message that go from pages 1 through 6 with interactable buttons.")
@@ -1032,7 +1032,7 @@ async def send_console_embed(ctx):
 @bot.command(help="Removes roles to a selected user.")
 async def remove_role(ctx, member: discord.Member, *roles):
     # Check if the user invoking the command has the necessary permissions
-    if ctx.author.guild_permissions.manage_roles:
+    if ctx.author.guild_permissions.administrator:
         # Iterate over each role provided
         for role_name in roles:
             # Check if the role name is 'all'
