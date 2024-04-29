@@ -619,7 +619,8 @@ async def quote(ctx):
     elif author == "ceo_of_india425":
         await ctx.reply("Bro does not own india :pray:")
     else:
-        await ctx.reply("Dm @.bernso to get your own quote.")
+        await ctx.reply("Dm '.bernso' or the owner of the server to get your own quote.")
+        
     
 
 @bot.command(help = "State wheather you are black or white and the bot will put you in a race.")
@@ -887,8 +888,10 @@ async def who_am_i(ctx):
     elif author == 'swayzz1820':
         await ctx.reply('YOU FINALLY JOINED')
     else:
-        await ctx.reply('DM .bernso to get your own quote.')
+        await ctx.reply('DM .bernso or the owner of the server to get your own thing.')
 
+    
+    
 @bot.command(help="How the bot is currently feeling. (He's a slave so don't feel bad for him)")
 async def hru(ctx):
     await ctx.reply("https://tenor.com/view/kys-keep-yourself-safe-low-tier-god-gif-24664025 ")
