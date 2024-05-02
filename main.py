@@ -1134,10 +1134,10 @@ async def on_message(message: discord.Message) -> None:
     "nigger", "niggers", "n1gga", "n1ggas", "n1gger", "n1ggers", 
     "nigga", "niggas", "nigger", "niggers", "n1gga", "n1ggas", 
     "n1gger", "n1ggers", "nigga", "niggas", "nigger", "niggers", 
-    "n1gga", "n1ggas", "n1gger", "n1ggers", "nigga", "niggas", 
+    "n1gga", "n1ggas", "n1gger", "n1ggers", "nigga", "niggas", "🇳", "🇺", "🇬", "🇦", "🇫", "🅰️"
     "nigger", "niggers", "n1gga", "n1ggas", "n1gger", "n1ggers", "rape", "niigger", "0ThisRodOrMyRod0", "knee grow", "0ThisRodOrMyRod0", "fuck", "shit", "bitch", "cunt", "ass", "faggot", "fag", "faggots", "faggot", "nigger", "nigga", "niggers", "niggas", "piss", "penis", "penises", "penis", "dick", "nega", "negro", "negros", "negas", "niga", "cum", "semen", "ejaculate", "F.U.C.K.I.N.G"]
 
-
+ 
     # Check if the message contains any rude words
     content = message.content.lower()
     for word in rude_words:
@@ -1145,7 +1145,7 @@ async def on_message(message: discord.Message) -> None:
             # If a rude word is found, delete the message and warn the user
             await message.delete()
             await message.channel.send(f"{message.author.mention}, please refrain from using rude language.")
-            break  # Stop checking for more rude words
+            break  # Stop checking
 
     # Save the updated records to a pickle file
     with open(RECORDS_FILENAME, 'wb') as file:
@@ -1153,9 +1153,11 @@ async def on_message(message: discord.Message) -> None:
 
     print.info(f'\nChannel([{message_record["channel"]}]) \nUser id({message_record["user_id"]}) \nUsername({message_record["username"]}) \nMessage({message_record["message_content"]})\nServer name({message_record["server_name"]})\n')
 
-    if "<@712946563508469832>" in message.content:
-        await message.channel.send("No.")
-        await message.delete()
+    contentyes = message.content.lower()
+    for word in rude_words:
+        if "<@712946563508469832>" == contentyes:
+            await message.channel.send("No.")
+            await message.delete()
         
     # Process commands after logging
     await bot.process_commands(message)
