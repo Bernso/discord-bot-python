@@ -973,6 +973,18 @@ async def on_message(message: discord.Message) -> None:
     }
     message_records.append(message_record)
 
+    rude_words = ["fuck", "shit", "bitch", "cunt", "ass", "faggot", "fag", "faggots", "faggot", "nigger", "nigga", "niggers", "niggas", "piss", "penis", "penises", "penis", "dick", "nega", "negro", "negros", "negas", "niga", "cum", "semen", "ejaculate", "F.U.C.K.I.N.G"]
+
+
+    # Check if the message contains any rude words
+    content = message.content.lower()
+    for word in rude_words:
+        if word in content:
+            # If a rude word is found, delete the message and warn the user
+            await message.delete()
+            await message.channel.send(f"{message.author.mention}, please refrain from using rude language.")
+            break  # Stop checking for more rude words
+
     # Save the updated records to a pickle file
     with open(RECORDS_FILENAME, 'wb') as file:
         pickle.dump(message_records, file)
