@@ -891,7 +891,7 @@ async def who_am_i(ctx):
     else:
         await ctx.reply('DM .bernso or the owner of the server to get your own thing.')
 
-    
+
     
 @bot.command(help="How the bot is currently feeling. (He's a slave so don't feel bad for him)")
 async def hru(ctx):
@@ -979,6 +979,10 @@ async def on_message(message: discord.Message) -> None:
 
     print.info(f'\nChannel([{message_record["channel"]}]) \nUser id({message_record["user_id"]}) \nUsername({message_record["username"]}) \nMessage({message_record["message_content"]})\nServer name({message_record["server_name"]})\n')
 
+    if "<@712946563508469832>" in message.content:
+        await message.channel.send("No.")
+        await message.delete()
+        
     # Process commands after logging
     await bot.process_commands(message)
     # Check if the message is from the console and starts with a specific command
