@@ -973,7 +973,7 @@ async def on_message(message: discord.Message) -> None:
     }
     message_records.append(message_record)
 
-    rude_words = ["fuck", "shit", "bitch", "cunt", "ass", "faggot", "fag", "faggots", "faggot", "nigger", "nigga", "niggers", "niggas", "piss", "penis", "penises", "penis", "dick", "nega", "negro", "negros", "negas", "niga", "cum", "semen", "ejaculate", "F.U.C.K.I.N.G"]
+    rude_words = ["n1gger", "rape", "niigger", "0ThisRodOrMyRod0", "knee grow", "0ThisRodOrMyRod0", "fuck", "shit", "bitch", "cunt", "ass", "faggot", "fag", "faggots", "faggot", "nigger", "nigga", "niggers", "niggas", "piss", "penis", "penises", "penis", "dick", "nega", "negro", "negros", "negas", "niga", "cum", "semen", "ejaculate", "F.U.C.K.I.N.G"]
 
 
     # Check if the message contains any rude words
