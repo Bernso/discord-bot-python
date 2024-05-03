@@ -165,7 +165,7 @@ bot = commands.Bot(command_prefix=bot_prefix, intents=intents, help_command=help
 
 
 
-@bot.command(CooldownMapping = 10, help="Creates a poll with a question and multiple options. Separate the question and options using '|' symbol. Example: !poll What is your favorite color? | Red | Blue | Green")
+@bot.command(help="Creates a poll with a question and multiple options. Separate the question and options using '|' symbol. Example: !poll What is your favorite color? | Red | Blue | Green")
 async def poll(ctx, *, question_and_options):
     if ctx.author.guild_permissions.administrator:
         await ctx.message.delete()
