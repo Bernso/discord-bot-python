@@ -1251,7 +1251,7 @@ async def on_message(message: discord.Message) -> None:
 
     # Check if the message contains any rude words
     content = message.content.lower()
-    if message.author.id != 712946563508469832:
+    if message.author.name != 'Bernso':
         for word in rude_words:
             if word in content:
                 # If a rude word is found, delete the message and warn the user
