@@ -13,6 +13,9 @@ import sqlite3
 import subprocess
 import loguru
 import time
+import warnings
+
+
 
 
 os.system('cls')
@@ -87,9 +90,18 @@ async def send_timed_message():
 
 
 
+
+
 class CustomHelpCommand(commands.HelpCommand):
+    def __init__(self):
+        super().__init__()
+        self.prefix = None
+    
     def get_command_signature(self, command):
-        return f"{self.context.prefix}{command.qualified_name} {command.signature}"
+        if self.prefix:
+            return f"{self.prefix}{command.qualified_name} {command.signature}"
+        else:
+            return f"{command.qualified_name} {command.signature}"
 
     async def send_bot_help(self, mapping):
         embed_pages = []
@@ -114,7 +126,7 @@ class CustomHelpCommand(commands.HelpCommand):
 
         # Add buttons for pagination if there are multiple pages
         if len(embed_pages) > 1:
-            view = PaginationView(embed_pages)
+            view = Pages(embed_pages)
             await message.edit(view=view)
     
     async def send_command_help(self, command):
@@ -122,7 +134,7 @@ class CustomHelpCommand(commands.HelpCommand):
         embed.add_field(name="Usage", value=self.get_command_signature(command), inline=False)
         await self.get_destination().send(embed=embed)
 
-class PaginationView(discord.ui.View):
+class Pages(discord.ui.View):
     def __init__(self, pages):
         super().__init__()
         self.pages = pages
@@ -142,11 +154,76 @@ class PaginationView(discord.ui.View):
         self.current_page = 0
         self.message = await ctx.send(embed=self.pages[self.current_page], view=self)
 
-
 con = sqlite3.connect('level.db')
 cur = con.cursor()
 intents = discord.Intents.all()
-bot = commands.Bot(command_prefix='.', intents=intents, help_command=CustomHelpCommand())
+bot_prefix = '.'  
+help_command = CustomHelpCommand()
+help_command.prefix = bot_prefix
+bot = commands.Bot(command_prefix=bot_prefix, intents=intents, help_command=help_command)
+
+
+
+
+@bot.command(CooldownMapping = 10, help="Creates a poll with a question and multiple options. Separate the question and options using '|' symbol. Example: !poll What is your favorite color? | Red | Blue | Green")
+async def poll(ctx, *, question_and_options):
+    if ctx.author.guild_permissions.administrator:
+        await ctx.message.delete()
+        # Split the question and options
+        parts = question_and_options.split('|')
+        question = parts[0].strip()
+        options = [option.strip() for option in parts[1:]]
+
+        if len(options) > 10:
+            await ctx.send(f"{ctx.user.mention} You can only have up to 10 options in a poll.")
+            return
+
+        # Create embed for the poll
+        embed = discord.Embed(title=f"Poll: {question}", color=discord.Color.blue())
+
+        # Add options to the embed
+        for i, option in enumerate(options):
+            embed.add_field(name=f"Option {i+1}", value=option, inline=False)
+
+        # Send the poll and add reactions
+        message = await ctx.send(embed=embed)
+        for i in range(len(options)):
+            await message.add_reaction(chr(0x1f1e6 + i))  # Unicode regional indicator symbols A-Z
+    else:
+        await ctx.message.delete()
+        await ctx.send(f"{ctx.user.mention} You do not have permission to use this command.")
+
+@bot.event
+async def on_raw_reaction_add(payload):
+    # Check if the reaction is added to a poll message
+    message_id = payload.message_id
+    channel_id = payload.channel_id
+    if payload.event_type != 'REACTION_ADD' or not payload.member or payload.member.bot:
+        return
+    channel = bot.get_channel(channel_id)
+    try:
+        message = await channel.fetch_message(message_id)
+    except discord.NotFound:
+        return
+    if not message.embeds:
+        return
+    embed = message.embeds[0]
+    if not embed.title or not embed.title.startswith("Poll:"):
+        return
+
+    # Update the poll results
+    emoji = payload.emoji
+    if isinstance(emoji, discord.PartialEmoji):
+        emoji = emoji.name
+    for field in embed.fields:
+        if field.name.startswith("Option") and field.value == emoji:
+            await message.channel.send(f"{payload.member.display_name} voted for {emoji}.")
+
+
+
+
+
+
 
 
 
@@ -1137,7 +1214,7 @@ async def on_message(message: discord.Message) -> None:
     "n1gga", "n1ggas", "n1gger", "n1ggers", "nigga", "niggas", "🇳", "🇺", "🇬", "🇦", "🇫", "🅰️"
     "nigger", "niggers", "n1gga", "n1ggas", "n1gger", "n1ggers", "rape", "niigger", "0ThisRodOrMyRod0", "knee grow", "0ThisRodOrMyRod0", "fuck", "shit", "bitch", "cunt", "ass", "faggot", "fag", "faggots", "faggot", "nigger", "nigga", "niggers", "niggas", "piss", "penis", "penises", "penis", "dick", "nega", "negro", "negros", "negas", "niga", "cum", "semen", "ejaculate", "F.U.C.K.I.N.G"]
 
- 
+
     # Check if the message contains any rude words
     content = message.content.lower()
     for word in rude_words:
