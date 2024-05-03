@@ -705,7 +705,7 @@ async def quote(ctx):
         
     
 
-@bot.command(help = "State wheather you are black or white and the bot will put you in a race.")
+@bot.command(help = "State if you are {black or white} and the bot will put you in a race.")
 async def race(ctx, option=None):
     if option.lower() == "white":
         await ctx.send("You'd lose the race")
