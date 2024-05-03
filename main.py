@@ -620,7 +620,7 @@ async def create_role(ctx, name: str, color: discord.Color, *members: discord.Me
 @bot.command(help = "This is just a test command, it will create embed message that go from pages 1 through 6 with interactable buttons.")
 async def page_test(ctx: commands.Context):
     embeds = [discord.Embed(title=f"Page {i}", description=f"Content for page {i}") for i in range(1, 6)]
-    view = PaginationView(embeds)  # Pass the embeds as pages argument
+    view = Pages(embeds)  # Pass the embeds as pages argument
     await view.start(ctx)
 
 
