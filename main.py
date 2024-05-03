@@ -188,7 +188,10 @@ async def poll(ctx, *, question_and_options):
         # Send the poll and add reactions
         message = await ctx.send(embed=embed)
         for i in range(len(options)):
-            await message.add_reaction(chr(0x1f1e6 + i))  # Unicode regional indicator symbols A-Z
+            if i == 9:
+                await message.add_reaction("🔟")  # Unicode regional indicator number 10
+            else:
+                await message.add_reaction(chr(0x0031 + i) + "\uFE0F\u20E3")  # Unicode regional indicator numbers 1-9
     else:
         await ctx.message.delete()
         await ctx.send(f"{ctx.author.mention} You do not have permission to use this command.")
