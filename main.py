@@ -175,7 +175,7 @@ async def poll(ctx, *, question_and_options):
         options = [option.strip() for option in parts[1:]]
 
         if len(options) > 10:
-            await ctx.send(f"{ctx.user.mention} You can only have up to 10 options in a poll.")
+            await ctx.send(f"{ctx.author.mention} You can only have up to 10 options in a poll.")
             return
 
         # Create embed for the poll
@@ -191,7 +191,7 @@ async def poll(ctx, *, question_and_options):
             await message.add_reaction(chr(0x1f1e6 + i))  # Unicode regional indicator symbols A-Z
     else:
         await ctx.message.delete()
-        await ctx.send(f"{ctx.user.mention} You do not have permission to use this command.")
+        await ctx.send(f"{ctx.author.mention} You do not have permission to use this command.")
 
 @bot.event
 async def on_raw_reaction_add(payload):
