@@ -1591,10 +1591,23 @@ async def on_command_error(ctx, error):
         await ctx.reply("You don't have the necessary permissions to run this command.")
     elif isinstance(error, commands.BotMissingPermissions):
         await ctx.reply("The bot doesn't have the necessary permissions to execute this command.")
+    elif isinstance(error, commands.DisabledCommand):
+        await ctx.reply("This command is currently disabled.")
+    elif isinstance(error, commands.NoPrivateMessage):
+        await ctx.reply("This command cannot be used in private messages.")
+    elif isinstance(error, commands.CheckFailure):
+        await ctx.reply("You do not have permission to use this command.")
+    elif isinstance(error, commands.CommandInvokeError):
+        await ctx.reply("An error occurred while executing the command.")
+        # Log the original exception
+        original_error = getattr(error, "original", error)
+        print.error('An error occurred during command execution:', file=sys.stderr)
+        traceback.print_exception(type(original_error), original_error, original_error.__traceback__, file=sys.stderr)
     else:
         # Log the error to console
-        print.warning('Ignoring exception in command {}:'.format(ctx.command), file=sys.stderr)
+        print.error('Ignoring exception in command {}: {}'.format(ctx.command, error))
         traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr)
+
 
 
 
