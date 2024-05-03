@@ -673,6 +673,8 @@ async def history(ctx):
 
         # Reply to the user to inform them that all message history has been sent
         await ctx.reply("All message history has been uploaded :thumbsup:")
+    else:
+        await ctx.reply("You do not have permission to use this command.")
 
 @bot.command(help = "Vishwa's favourite things.")
 async def vishwa_bestpicks(ctx):
