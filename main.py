@@ -687,7 +687,7 @@ async def vishwa_bestpicks(ctx):
     # Send the embedded message
     await ctx.send(embed=embed)
 
-@bot.command(help = "Will reply with a quote depending on how sent the command")
+@bot.command(help = "Will reply with a quote depending on who sent the command")
 async def quote(ctx):
     author = str(ctx.author)
     if author == "vboss890":
