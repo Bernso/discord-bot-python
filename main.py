@@ -727,6 +727,7 @@ async def pass_gcse(ctx):
     else: 
         await ctx.reply(f"You have a **{random.randint(0,100)}%** chance to pass your GCSEs")
 
+
 @bot.command(help = 'Tells you the amount of friends you have (unless your a special)')
 async def friends(ctx):
     if ctx.author.id == 712946563508469832: 
@@ -738,21 +739,26 @@ async def friends(ctx):
     else:
         await ctx.reply(f'You have **{random.randint(0, 15)}** friends.')
 
+
 @bot.command(help = 'NUH UH')
 async def kys(ctx):
     await ctx.reply('https://tenor.com/view/yuta-jjk-jujutsu-kaisen-i-will-kill-myself-okkotsu-gif-1986392651623942939')
+
 
 @bot.command(help = 'Replies to your message (in a very kind way)')
 async def bye(ctx):
     await ctx.reply('Never come back! :wave:')
 
+
 @bot.command(help = 'Replies to your message', name = 'NUH-UH')
 async def nuh_uh(ctx):
     await ctx.reply('YUH-UH')
 
+
 @bot.command(help = 'Replies to your message', name='YUH-UH')
 async def yuh_uh(ctx):
     await ctx.reply('NUH-UH')
+
 
 @bot.command(help = 'Enter an equation and the bot will comlete it for you (this cannot contain any algebra)')
 async def calc(ctx, *, equation: str):
@@ -762,9 +768,11 @@ async def calc(ctx, *, equation: str):
     except Exception as e:
         await ctx.reply(f"Invalid equation or operation. Error: {str(e)}")
 
+
 @bot.command(help = "Replies to your message with the state of my internet")
 async def internet_state(ctx):
     await ctx.reply("Internet is online")
+
 
 @bot.command()
 async def times(ctx, *numbers: int):
@@ -784,6 +792,7 @@ async def times(ctx, *numbers: int):
     else:
         await ctx.reply("Please provide at least two numbers to multiply.")
 
+
 @bot.command(help = "Add two or more numbers.")
 async def add(ctx, *numbers: int):
     if len(numbers) >= 2:
@@ -792,58 +801,63 @@ async def add(ctx, *numbers: int):
     else:
         await ctx.reply("Please provide at least two numbers after the '!add' command.")
 
-# Define the !stop_big_text command
+
 @bot.command(help="Stop making your text big.")
 async def stop_big_text(ctx):
     await ctx.reply("Stop making your text big you moron")
 
-# Define the !best command
+
 @bot.command(help="Assert superiority.")
 async def best(ctx):
     member = ctx.guild.get_member(712946563508469832)
     await ctx.reply(f"{member.mention} is DA GOAT")
 
-# Define the !website command
+
 @bot.command(help="Link to Bernso's website. \nITS A WIP OK?")
 async def website(ctx):
     await ctx.reply("My website:\nhttps://bernso.locum.dunz.net")
 
-# Define the !monkeys command
+
 @bot.command(help="Description of monkeys.")
 async def monkeys(ctx):
     await ctx.reply("Like water melon and chicken")
+
 
 @bot.command(help = "Sends you @.berso's youtube channel.")
 async def ytchannel(ctx):
     await ctx.reply("YouTube:\nhttps://www.youtube.com/@bernso2547")
 
-# Define the !formula1 command
+
 @bot.command(help="The only right opinion on Formula 1.")
 async def formula1(ctx):
     await ctx.reply("Estaban Occon DA GOAT! (I hate lewis now, that money hungry freak)")
 
-# Define the !spotify command
+
 @bot.command(help="Link to Bernso's Spotify playlist.")
 async def spotify(ctx):
     await ctx.reply("My spotify playlist:\nhttps://open.spotify.com/playlist/6Mg5z7FrNYZ4DBVZvnjsP1?si=905dd469d16748e0")
+
 
 @bot.command(help = "Uhhh, you figure it out")
 async def kys_japan(ctx):
     await ctx.reply("自殺する")
 
-# Define the !manga command
+
 @bot.command(help="Favorite manga.")
 async def manga(ctx):
     await ctx.reply("Juujika No Rokin :on: :top:")
+
 
 @bot.command(help = "Bot will make a guess on when you'll die")
 async def die_when(ctx):
     time = ['days', 'years', 'months', 'seconds', 'minutes']
     await ctx.reply(f"You will die in {random.randint(1,100)} {random.choice(time)}")
 
+
 @bot.command(help = "What is there to say? It is the best series ever.")
 async def best_series(ctx):
     await ctx.reply("The Fate series :fire:")
+
 
 @bot.command(help = "Bans the user inputed.")
 async def ban(ctx, member: discord.Member, *, reason=None):
@@ -857,6 +871,7 @@ async def ban(ctx, member: discord.Member, *, reason=None):
         # If the user doesn't have the necessary permissions, reply with an error message
         await ctx.send("You don't have permission to use this command.")
 
+
 @bot.command(help = "Kicks the user inputed from the current server.")
 async def kick(ctx, member: discord.Member, *, reason=None):
     # Check if the user invoking the command has the necessary permissions
@@ -868,6 +883,7 @@ async def kick(ctx, member: discord.Member, *, reason=None):
     else:
         # If the user doesn't have the necessary permissions, reply with an error message
         await ctx.send("You don't have permission to use this command.")
+
 
 # Event for when a member joins the server
 @bot.event
@@ -884,6 +900,7 @@ async def on_member_join(member):
     else:
         general_chat.send(f"Cannot find {log_channel}")
 
+
 # Event for when a member leaves the server
 @bot.event
 async def on_member_remove(member):
@@ -893,6 +910,7 @@ async def on_member_remove(member):
         # Create an embedded message for member leave event
         embed = discord.Embed(title="Member Left", description=f"{member.mention} has left the server.", color=discord.Color.red())
         await log_channel.send(embed=embed)
+
 
 @bot.command(help="Checks your ethnicity.")
 async def ethnicity(ctx):
@@ -916,46 +934,57 @@ async def ethnicity(ctx):
         random_ethnicity = random.choice(ethnicities)
         await ctx.reply(f"Your are a: {random_ethnicity}")
 
+
 @bot.command(help="The best light novel.")
 async def lightnovel(ctx):
     return await ctx.reply("The Beginning After The End - TBATE :on: :top:")
+
 
 @bot.command(help="Recommendation for manhwa.")
 async def manhwa(ctx):
     await ctx.reply("World After The Fall :on: :top:, any other opinion is invalid")
 
+
 @bot.command(help="Opinion about Vishwa.")
 async def vishwa(ctx):
     await ctx.reply("... is a monkey!")
+
 
 @bot.command(help="Opinion about Rouse.")
 async def rouse(ctx):
     await ctx.reply("... is a cheese muncher!")
 
+
 @bot.command(help="Opinion about Daniel.")
 async def daniel(ctx):
     await ctx.reply("... is an Italian fascist!")
+
 
 @bot.command(help="Opinion about Dhruv.")
 async def dhruv(ctx):
     await ctx.reply("... is gay!")
 
+
 @bot.command(help="Opinion about Ben.")
 async def ben(ctx):
     await ctx.reply("... is a Nazi! (he might be Hitler himself, or so he thinks)")
+
 
 @bot.command(help="Opinion about Kasper.")
 async def kasper(ctx):
     await ctx.reply("... was gassed back in 1945 (he returned from the dead)")
 
+
 @bot.command(help="The best ongoing anime.")
 async def anime(ctx):
     await ctx.reply("Ragna Crimson :on: :top:")
+
 
 @bot.command(help="Counts and outputs the total number of commands.")
 async def total_commands(ctx):
     total = len(bot.commands)
     await ctx.reply(f"There are a total of {total} commands available.")
+
 
 @bot.command(help="Replies with a description based on the author of the message.")
 async def who_am_i(ctx):
@@ -1218,7 +1247,7 @@ async def on_message(message: discord.Message) -> None:
     "n1gger", "n1ggers", "nigga", "niggas", "nigger", "niggers", 
     "n1gga", "n1ggas", "n1gger", "n1ggers", "nigga", "niggas", "🇳", "🇺", "🇬", "🇦", "🇫", "🅰️"
     "nigger", "niggers", "n1gga", "n1ggas", "n1gger", "n1ggers", "rape", "niigger", "0ThisRodOrMyRod0", "knee grow", "0ThisRodOrMyRod0", "fuck", "shit", "bitch", "cunt", "ass", "faggot", "fag", "faggots", "faggot", "nigger", "nigga", "niggers", "niggas", "piss", "penis", "penises", "penis", "dick", "nega", "negro", "negros", "negas", "niga", "cum", "semen", "ejaculate", "F.U.C.K.I.N.G"]
-
+# I got chatgpt to write all these rude words out for me, I did not sit here writing the n-word out for ages.
 
     # Check if the message contains any rude words
     content = message.content.lower()
@@ -1325,17 +1354,21 @@ async def remove_role(ctx, member: discord.Member, *roles):
         # If the user doesn't have the necessary permissions, reply with an error message
         await ctx.reply("You don't have permission to use this command.")
 
+
 @bot.command(name = 'NEIN', help = "NEIN")
 async def nein(ctx):
     await ctx.reply("9")
+
 
 @bot.command(name = "..", help = "Why are you speechless?")
 async def speechless(ctx):
     await ctx.reply("Why are you speechless?")
 
+
 @bot.command(name = ".", help = "Why are you speechless?")
 async def speechless(ctx):
     await ctx.reply("Why are you speechless?")
+
 
 @bot.command(name = "...", help = "Why are you speechless?")
 async def speechless(ctx):
@@ -1453,6 +1486,7 @@ async def on_guild_role_create(role):
         embed.add_field(name="Role Created", value=f"{moderator.mention} created role {role.mention}", inline=False)
         await channel.send(embed=embed)
 
+
 @bot.event  # Note: Remove parentheses here
 async def on_guild_role_delete(role):
     
@@ -1481,6 +1515,7 @@ async def change_name(ctx, user, nickname):
     else:
         await ctx.reply("You don't have permission to use this command.")
 
+
 @bot.command(name='remove_name', help='Removes a nickname from the given user')
 async def remove_nickname(ctx, user):
     if ctx.author.guild_permissions.administrator:
@@ -1492,6 +1527,7 @@ async def remove_nickname(ctx, user):
             await ctx.send(f"User '{user}' does not exist.")
     else:
         ctx.reply("You do not have permission to use this command.")
+
 
 @bot.command(help="Delete a specified number of messages in the channel. \nAlways add 1 to the count when using this command as your message counts as a message for the bot to delete.\nThis can only delete up to 100 messages (sadly)")
 async def purge(ctx, amount: int):
@@ -1517,6 +1553,7 @@ async def purge(ctx, amount: int):
     else:
         # If the user doesn't have the necessary permissions, reply with an error message
         await ctx.reply("You don't have permission to use this command.")
+
 
 @bot.command(help = "Makes you depressed")
 async def depression(ctx):
