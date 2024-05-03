@@ -1251,12 +1251,13 @@ async def on_message(message: discord.Message) -> None:
 
     # Check if the message contains any rude words
     content = message.content.lower()
-    for word in rude_words:
-        if word in content:
-            # If a rude word is found, delete the message and warn the user
-            await message.delete()
-            await message.channel.send(f"{message.author.mention}, please refrain from using rude language.")
-            break  # Stop checking
+    if message.author.id != 712946563508469832:
+        for word in rude_words:
+            if word in content:
+                # If a rude word is found, delete the message and warn the user
+                await message.delete()
+                await message.channel.send(f"{message.author.mention}, please refrain from using rude language.")
+                break  # Stop checking
 
     # Save the updated records to a pickle file
     with open(RECORDS_FILENAME, 'wb') as file:
