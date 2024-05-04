@@ -29,7 +29,7 @@ BOT_LOG_CHANNEL_ID = 1234100559431077939
 VERIFIED_ROLE_NAME = "Verified"
 
 
-class print:
+class myLogger:
     def info(message):
         loguru.logger.info(message)
         
@@ -49,12 +49,12 @@ try:
         message_records = pickle.load(file)
 except FileNotFoundError:
     message_records = []
-    print.warning("Message records file not found. Creating a new one.")
+    myLogger.warning("Message records file not found. Creating a new one.")
     yes = open('message_records.pkl', 'w')
     yes.close()
 except EOFError:
     message_records = []
-    print.error("The message records file is empty or corrupted.")
+    myLogger.error("The message records file is empty or corrupted.")
 
 
 
@@ -236,7 +236,7 @@ async def on_raw_reaction_add(payload):
 
 @bot.event
 async def on_ready():
-    print.info(f'{bot.user} is now running!')
+    myLogger.info(f'{bot.user} is now running!')
     
     await bot.change_presence(status=discord.Status.dnd, activity=discord.Activity(type=discord.ActivityType.listening, name="Erika"))
     
@@ -251,7 +251,7 @@ async def on_ready():
         embed = discord.Embed(title = "Verification", description = "Click below to verify.")
         await verifyChannel.send(embed = embed, view = Verification())
     else:
-        print.error("Could not send verification message for whatever reason.")
+        myLogger.error("Could not send verification message for whatever reason.")
     
     with open('IMG_0935.JPEG', 'rb') as f:
         avatar_bytes = f.read()
@@ -340,7 +340,7 @@ async def editxp(ctx, user: discord.Member, amount):
                 await ctx.send("User not found in the database.")
         except sqlite3.OperationalError as e:
             await ctx.send("Database error occurred.")
-            print.error("SQLite Error:", e)
+            myLogger.error("SQLite Error:", e)
     else:
         await ctx.reply("You do not have permission to use this command.")
 
@@ -1263,7 +1263,7 @@ async def on_message(message: discord.Message) -> None:
     with open(RECORDS_FILENAME, 'wb') as file:
         pickle.dump(message_records, file)
 
-    print.info(f'\nChannel([{message_record["channel"]}]) \nUser id({message_record["user_id"]}) \nUsername({message_record["username"]}) \nMessage({message_record["message_content"]})\nServer name({message_record["server_name"]})\n')
+    myLogger.info(f'\nChannel([{message_record["channel"]}]) \nUser id({message_record["user_id"]}) \nUsername({message_record["username"]}) \nMessage({message_record["message_content"]})\nServer name({message_record["server_name"]})\n')
 
     contentyes = message.content.lower()
     for word in rude_words:
@@ -1284,7 +1284,7 @@ async def on_message(message: discord.Message) -> None:
         if channel:
             await channel.send(content)
         else:
-            print.warning("Invalid channel ID")
+            myLogger.warning("Invalid channel ID")
 
     if message.author == bot.user:
         return
@@ -1322,7 +1322,7 @@ async def send_console_embed(ctx):
         if ctx.author.guild_permissions.administrator:
             await ctx.author.add_roles(role)
         else:
-            print.warning("Invalid insufficient permissions")
+            myLogger.warning("Invalid insufficient permissions")
 
 
 
@@ -1393,7 +1393,7 @@ async def send_console_message(ctx):
         if role and ctx.author.guild_permissions.administrator:
             await ctx.author.add_roles(role)
         else:
-            print.warning("Invalid role ID or insufficient permissions")
+            myLogger.warning("Invalid role ID or insufficient permissions")
 
 
 
@@ -1438,8 +1438,8 @@ async def set_role_log_channel(ctx, channel: discord.TextChannel):
         # Save the channel ID to a database or file
         # Replace this part with your preferred method of storing data
         channel_id = channel.id
-        # In this example, we're simply printing the channel ID
-        print.success(f"Role log channel set to: {channel_id}")
+        # In this example, we're simply myLoggering the channel ID
+        myLogger.success(f"Role log channel set to: {channel_id}")
         await ctx.send(f"Role log channel has been set to {channel.mention}")
     else:
         await ctx.send("You don't have permission to use this command.")
@@ -1602,12 +1602,12 @@ async def on_command_error(ctx, error):
         await ctx.reply("An error occurred while executing the command.")
         # Log the original exception
         original_error = getattr(error, "original", error)
-        print.error('An error occurred during command execution:', file=sys.stderr)
-        traceback.print_exception(type(original_error), original_error, original_error.__traceback__, file=sys.stderr)
+        myLogger.error('An error occurred during command execution:', file=sys.stderr)
+        traceback.myLogger_exception(type(original_error), original_error, original_error.__traceback__, file=sys.stderr)
     else:
         # Log the error to console
-        print.error('Ignoring exception in command {}: {}'.format(ctx.command, error))
-        traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr)
+        myLogger.error('Ignoring exception in command {}: {}'.format(ctx.command, error))
+        traceback.myLogger_exception(type(error), error, error.__traceback__, file=sys.stderr)
 
 
 
