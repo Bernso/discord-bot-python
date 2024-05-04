@@ -15,7 +15,7 @@ import subprocess
 import loguru
 import time
 import warnings
-
+from typing import Union
 
 
 
@@ -1330,31 +1330,41 @@ async def send_console_embed(ctx):
 
     
 
-@bot.command(help="Removes roles to a selected user.")
-async def remove_role(ctx, member: discord.Member, *roles):
+@bot.command(name='r-role', help="Remove roles from a selected user.")
+async def remove_role(ctx, member: Union[discord.Member, str], *roles):
     # Check if the user invoking the command has the necessary permissions
-    if ctx.author.guild_permissions.administrator:
-        # Iterate over each role provided
+    if ctx.author.guild_permissions.manage_roles:
+        # Check if the member parameter is set to 'all'
+        if isinstance(member, str) and member.lower() == 'all':
+            # Iterate over all members and remove the specified roles
+            for guild_member in ctx.guild.members:
+                for role_name in roles:
+                    # Check if the role exists in the server
+                    role = discord.utils.get(ctx.guild.roles, name=role_name)
+                    if role:
+                        if role in guild_member.roles:
+                            await guild_member.remove_roles(role)
+            await ctx.send(f"{role} removed from all members.")
+            return
+
+        # If the member parameter is a specific member, proceed with removing roles from that member
         for role_name in roles:
-            # Check if the role name is 'all'
-            if role_name.lower() == 'all':
-                # If 'all' is specified, add all roles to the member
-                for role in ctx.guild.roles:
-                    if role != 1234086390073917453:
-                        if role != ctx.guild.default_role:  # Avoid adding the @everyone role
-                            await member.remove_roles(role)
-                await ctx.send(f"All available roles have been removed from {member.mention}")
-            else:
-                # Check if the role exists in the server
-                role = discord.utils.get(ctx.guild.roles, name=role_name)
-                if role:
-                    await member.remove_roles(role)
-                    await ctx.send(f"Removed role '{role_name}' from {member.mention}")
+            # Check if the role exists in the server
+            role = discord.utils.get(ctx.guild.roles, name=role_name)
+            if role:
+                if isinstance(member, discord.Member):
+                    if role in member.roles:
+                        await member.remove_roles(role)
+                    else:
+                        await ctx.send(f"{member.name} doesn't have the role {role}.")
                 else:
-                    await ctx.send(f"Role '{role_name}' does not exist.")
+                    await ctx.send("Invalid member provided.")
+            else:
+                await ctx.send(f"Role '{role_name}' does not exist.")
     else:
         # If the user doesn't have the necessary permissions, reply with an error message
         await ctx.reply("You don't have permission to use this command.")
+
 
 
 @bot.command(name = 'NEIN', help = "NEIN")
@@ -1399,37 +1409,41 @@ async def send_console_message(ctx):
 
 
 
-@bot.command(help="Add roles to a selected user.")
-async def add_role(ctx, member: discord.Member, *roles):
+@bot.command(name='a-role', help="Add roles to a selected user.")
+async def add_role(ctx, member: Union[discord.Member, str], *roles):
     # Check if the user invoking the command has the necessary permissions
     if ctx.author.guild_permissions.manage_roles:
-        # Iterate over each role provided
+        # Check if the member parameter is set to 'all'
+        if isinstance(member, str) and member.lower() == 'all':
+            # Iterate over all members and add the specified roles
+            for guild_member in ctx.guild.members:
+                for role_name in roles:
+                    # Check if the role exists in the server
+                    role = discord.utils.get(ctx.guild.roles, name=role_name)
+                    if role:
+                        # Avoid adding the @everyone role
+                        if role != ctx.guild.default_role:
+                            if role not in guild_member.roles:
+                                await guild_member.add_roles(role)
+            await ctx.send(f"{role} added to all members.")
+            return
+
+        # If the member parameter is a specific member, proceed with adding roles to that member
         for role_name in roles:
-            # Check if the role name is 'all'
-            if role_name.lower() == 'all':
-                # If 'all' is specified, add all roles to the member
-                for role in ctx.guild.roles:
-                    if role != ctx.guild.default_role: # Avoid adding the @everyone role
-                        if role != 1234086390073917453: 
-                            await member.add_roles(role)
-                await ctx.send(f"All available roles have been added to {member.mention}")
-            else:
-                # Check if the role exists in the server
-                role = discord.utils.get(ctx.guild.roles, name=role_name)
-                if role:
-                    if role in member.roles:
-                        # If the member already has the role, remove it
-                        await member.remove_roles(role)
-                        await ctx.send(f"Removed role '{role_name}' from {member.mention}")
-                    else:
-                        # If the member doesn't have the role, add it
+            # Check if the role exists in the server
+            role = discord.utils.get(ctx.guild.roles, name=role_name)
+            if role:
+                if isinstance(member, discord.Member):
+                    if role not in member.roles:
                         await member.add_roles(role)
-                        await ctx.send(f"Added role '{role_name}' to {member.mention}")
                 else:
-                    await ctx.send(f"Role '{role_name}' does not exist.")
+                    await ctx.send("Invalid member provided.")
+            else:
+                await ctx.send(f"Role '{role_name}' does not exist.")
     else:
         # If the user doesn't have the necessary permissions, reply with an error message
         await ctx.reply("You don't have permission to use this command.")
+
 
 
 @bot.command(help="Set the channel for role change logs.")
@@ -1533,7 +1547,7 @@ async def remove_nickname(ctx, user):
 
 
 
-@bot.command(name='get_pfp', help="Get a user's profile picture")
+@bot.command(name='get_pfp', help="Get a user's profile picture\n<user> can be either a user ID, user name or display name")
 async def get_pfp(ctx, *, user):
     # Convert the user input to a Member object
     converter = MemberConverter()
