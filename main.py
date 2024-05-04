@@ -1094,10 +1094,11 @@ async def on_message(message: discord.Message) -> None:
     myLogger.info(f'\nChannel([{message_record["channel"]}]) \nUser id({message_record["user_id"]}) \nUsername({message_record["username"]}) \nMessage({message_record["message_content"]})\nServer name({message_record["server_name"]})\n')
 
     contentyes = message.content.lower()
-    for word in rude_words:
-        if "<@712946563508469832>" == contentyes:
-            await message.channel.send("No.")
-            await message.delete()
+    
+    
+    if "<@712946563508469832>" == contentyes:
+        await message.channel.send("No.")
+        await message.delete()
         
     # Process commands after logging
     await bot.process_commands(message)
