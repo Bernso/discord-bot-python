@@ -1,5 +1,6 @@
+from logging import warn
 import discord
-from discord.ext import commands
+from discord.ext import commands, tasks
 from discord import Embed
 import random
 import pickle
@@ -10,19 +11,37 @@ import traceback
 import sys
 import sqlite3
 import subprocess
+import loguru
+import time
+import warnings
 
 
-#os.system('cls')
+
+
+os.system('cls')
 
 
 load_dotenv()
 RECORDS_FILENAME = os.getenv('ENVRECORDS_FILENAME')
 TOKEN = os.getenv('ENVDISCORD_TOKEN')
 ENABLED_USER_ID = 712946563508469832 # My user id
-BOT_LOG_CHANNEL_ID = 1208431780529578014
+BOT_LOG_CHANNEL_ID = 1234100559431077939
 VERIFIED_ROLE_NAME = "Verified"
 
 
+class print:
+    def info(message):
+        loguru.logger.info(message)
+        
+    def warning(message):
+        loguru.logger.warning(message)
+        
+    def error(message):
+        loguru.logger.error(message)
+        
+    def success(message):
+        loguru.logger.success(message)
+    
 
 # Load existing message records
 try:
@@ -30,14 +49,20 @@ try:
         message_records = pickle.load(file)
 except FileNotFoundError:
     message_records = []
-    print("Message records file not found. Creating a new one.")
+    print.warning("Message records file not found. Creating a new one.")
+    yes = open('message_records.pkl', 'w')
+    yes.close()
 except EOFError:
     message_records = []
-    print("Error: The message records file is empty or corrupted.")
+    print.error("The message records file is empty or corrupted.")
+
+
+
 
 
 # replys message history
 async def reply_message_history(message, message_records):
+    
     # Extract message content, username, and server name for each record
     message_history = '\n'.join([f"{record.get('message_content', 'Unknown')} - {record.get('username', 'Unknown')} ({record.get('server_name', 'Unknown')})" for record in message_records])
     
@@ -55,19 +80,28 @@ async def reply_message_history(message, message_records):
 # Function to send the timed message
 async def send_timed_message():
     await bot.wait_until_ready()
-    channel = bot.get_channel(1047658455172911116)
+    channel = bot.get_channel(1225352074955591713)
     while not bot.is_closed():
         # Send your message here
         await asyncio.sleep(800)
-        await channel.send("Welcome, this is my place where I experiement with my bot and try experimenting on things!")
+        await channel.send("Hi")
         # Wait for 1 hour (3600 seconds) 3 hours (10800)
         await asyncio.sleep(10000)
 
 
 
+
+
 class CustomHelpCommand(commands.HelpCommand):
+    def __init__(self):
+        super().__init__()
+        self.prefix = None
+    
     def get_command_signature(self, command):
-        return f"{self.context.prefix}{command.qualified_name} {command.signature}"
+        if self.prefix:
+            return f"{self.prefix}{command.qualified_name} {command.signature}"
+        else:
+            return f"{command.qualified_name} {command.signature}"
 
     async def send_bot_help(self, mapping):
         embed_pages = []
@@ -92,7 +126,7 @@ class CustomHelpCommand(commands.HelpCommand):
 
         # Add buttons for pagination if there are multiple pages
         if len(embed_pages) > 1:
-            view = PaginationView(embed_pages)
+            view = Pages(embed_pages)
             await message.edit(view=view)
     
     async def send_command_help(self, command):
@@ -100,7 +134,7 @@ class CustomHelpCommand(commands.HelpCommand):
         embed.add_field(name="Usage", value=self.get_command_signature(command), inline=False)
         await self.get_destination().send(embed=embed)
 
-class PaginationView(discord.ui.View):
+class Pages(discord.ui.View):
     def __init__(self, pages):
         super().__init__()
         self.pages = pages
@@ -120,45 +154,113 @@ class PaginationView(discord.ui.View):
         self.current_page = 0
         self.message = await ctx.send(embed=self.pages[self.current_page], view=self)
 
-
 con = sqlite3.connect('level.db')
 cur = con.cursor()
 intents = discord.Intents.all()
-bot = commands.Bot(command_prefix='.', intents=intents, help_command=CustomHelpCommand())
+bot_prefix = '.'  
+help_command = CustomHelpCommand()
+help_command.prefix = bot_prefix
+bot = commands.Bot(command_prefix=bot_prefix, intents=intents, help_command=help_command)
 
 
 
 
-#async def main():
-#    initial_extensions = ['xp']  # Replace 'your_cog_module' with the filename of your cog module
-#    for extension in initial_extensions:
-#        await bot.load_extension(extension)
-#asyncio.run(main())
+@bot.command(help="Creates a poll with a question and multiple options. Separate the question and options using '|' symbol. Example: !poll What is your favorite color? | Red | Blue | Green")
+async def poll(ctx, *, question_and_options):
+    if ctx.author.guild_permissions.administrator:
+        await ctx.message.delete()
+        # Split the question and options
+        parts = question_and_options.split('|')
+        question = parts[0].strip()
+        options = [option.strip() for option in parts[1:]]
+
+        if len(options) > 10:
+            await ctx.send(f"{ctx.author.mention} You can only have up to 10 options in a poll.")
+            return
+
+        # Create embed for the poll
+        embed = discord.Embed(title=f"Poll: {question}", color=discord.Color.blue())
+
+        # Add options to the embed
+        for i, option in enumerate(options):
+            embed.add_field(name=f"Option {i+1}", value=option, inline=False)
+
+        # Send the poll and add reactions
+        message = await ctx.send(embed=embed)
+        for i in range(len(options)):
+            if i == 9:
+                await message.add_reaction("🔟")  # Unicode regional indicator number 10
+            else:
+                await message.add_reaction(chr(0x0031 + i) + "\uFE0F\u20E3")  # Unicode regional indicator numbers 1-9
+    else:
+        await ctx.message.delete()
+        await ctx.send(f"{ctx.author.mention} You do not have permission to use this command.")
+
+@bot.event
+async def on_raw_reaction_add(payload):
+    # Check if the reaction is added to a poll message
+    message_id = payload.message_id
+    channel_id = payload.channel_id
+    if payload.event_type != 'REACTION_ADD' or not payload.member or payload.member.bot:
+        return
+    channel = bot.get_channel(channel_id)
+    try:
+        message = await channel.fetch_message(message_id)
+    except discord.NotFound:
+        return
+    if not message.embeds:
+        return
+    embed = message.embeds[0]
+    if not embed.title or not embed.title.startswith("Poll:"):
+        return
+
+    # Update the poll results
+    emoji = payload.emoji
+    if isinstance(emoji, discord.PartialEmoji):
+        emoji = emoji.name
+    for field in embed.fields:
+        if field.name.startswith("Option") and field.value == emoji:
+            await message.channel.send(f"{payload.member.display_name} voted for {emoji}.")
+
+
+
+
+
+
+
+
+
+
+
 
 
 @bot.event
 async def on_ready():
-    print(f'{bot.user} is now running!')
+    print.info(f'{bot.user} is now running!')
     
     await bot.change_presence(status=discord.Status.dnd, activity=discord.Activity(type=discord.ActivityType.listening, name="Erika"))
     
     
     bot.loop.create_task(send_timed_message())
-    channel = bot.get_channel(1208435912342511637)
-    if channel:
-        async for message in channel.history():
+    verifyChannel = bot.get_channel(1234091236097396787)
+    if verifyChannel:
+        async for message in verifyChannel.history():
             # Delete the previous message if it was sent by the bot
             await message.delete()
                 
         embed = discord.Embed(title = "Verification", description = "Click below to verify.")
-        await channel.send(embed = embed, view = Verification())
+        await verifyChannel.send(embed = embed, view = Verification())
     else:
-        print("Could not send verification message for whatever reason.")
+        print.error("Could not send verification message for whatever reason.")
     
-    #with open('projectK.gif', 'rb') as f:
-    #    avatar_bytes = f.read()
+    with open('IMG_0935.JPEG', 'rb') as f:
+        avatar_bytes = f.read()
+        f.close()
     #await bot.user.edit(avatar=avatar_bytes)
-    await bot.user.edit(username="Bernso")
+    #await bot.user.edit(username="bot-Bernso")
+
+    
+
 
 
 @bot.command(help = "Starts up the leveling system if it hasnt already.")
@@ -180,7 +282,6 @@ async def init(ctx):
 async def level_up_notification(user, level, channel):
     message = f"Congratulations {user.mention}! You've reached level {level}!"
     await channel.send(message)
-
 
 
 @bot.command(help="Edit a user's experience.\n For the <amount> of xp you can use 'reset' to reset the user's XP.")
@@ -239,7 +340,7 @@ async def editxp(ctx, user: discord.Member, amount):
                 await ctx.send("User not found in the database.")
         except sqlite3.OperationalError as e:
             await ctx.send("Database error occurred.")
-            print("SQLite Error:", e)
+            print.error("SQLite Error:", e)
     else:
         await ctx.reply("You do not have permission to use this command.")
 
@@ -375,8 +476,8 @@ class Verification(discord.ui.View):
         super().__init__(timeout = None)
     @discord.ui.button(label="Verify",custom_id = "Verify",style = discord.ButtonStyle.success)
     async def verify(self, interaction, button):
-        verified = 1189910015415435324
-        unverified = 1189910014152941688
+        verified = 1234090799571013712
+        unverified = 1234090964549767212
         user = interaction.user
         if verified not in [y.id for y in user.roles]:
             await user.remove_roles(user.guild.get_role(unverified))
@@ -391,7 +492,7 @@ async def start_verify(ctx):
     else:
         await ctx.reply("You cannot use this command. Required = Administrator")
 
-@bot.command(name='runfile')
+@bot.command(name='runfile', help = "Do not put .py after the file name as it will not work\nThe current working files are:\n- hello.py\n- fakehack.py\n- PassGen.py")
 async def run_file(ctx, file_name: str):
     try:
         # Execute the Python file and capture its output
@@ -400,6 +501,20 @@ async def run_file(ctx, file_name: str):
 
         # Send the output as a message
         await ctx.send(f"Output:\n```{output}```")
+    except Exception as e:
+        await ctx.send(f"An error occurred: {str(e)}")
+
+@bot.command(name='dm_runfile', help = "Do not put .py after the file name as it will not work\nThe current working files are:\n- hello.py\n- fakehack.py\n- PassGen.py")
+async def dm_run_file(ctx, file_name: str):
+    try:
+        user = ctx.author
+        # Execute the Python file and capture its output
+        result = subprocess.run(['python', f'{file_name}.py'], capture_output=True, text=True)
+        output = result.stdout
+
+        # Send the output as a message
+        await user.send(f"Output:\n```{output}```")
+        await ctx.send(f"{user.mention} check your dms")
     except Exception as e:
         await ctx.send(f"An error occurred: {str(e)}")
 
@@ -462,49 +577,50 @@ async def delete_role(ctx, role_name: str):
 
 @bot.command(help="Creates a mentionable role with a name and color, and optionally assigns it to mentioned members.")
 async def create_role(ctx, name: str, color: discord.Color, *members: discord.Member):
-    guild = ctx.guild
-    
-    # Check if the role already exists
-    if discord.utils.get(guild.roles, name=name):
-        embed = discord.Embed(
-            title="Error",
-            description=f"Role '{name}' already exists.",
-            color=discord.Color.red()
-        )
-        await ctx.send(embed=embed)
-        return
-    
-    # Create the role with the specified name and color
-    new_role = await guild.create_role(name=name, color=color, mentionable=True)
-    
-    # Set the position of the new role
-    await new_role.edit(position=1)
-    
-    # Assign the role to each member
-    for member in members:
-        await member.add_roles(new_role)
-    
-    if members:
-        member_list = ", ".join(member.mention for member in members)
-        embed = discord.Embed(
-            title="Role Created",
-            description=f"Role '{name}' created and assigned to {member_list} by {ctx.author.mention}.",
-            color=discord.Color.green()
-        )
-    else:
-        embed = discord.Embed(
-            title="Role Created",
-            description=f"Role '{name}' created by {ctx.author.mention}.",
-            color=discord.Color.green()
-        )
+    if ctx.author.guild_permissions.administrator:
+        guild = ctx.guild
         
-    await ctx.send(embed=embed)
+        # Check if the role already exists
+        if discord.utils.get(guild.roles, name=name):
+            embed = discord.Embed(
+                title="Error",
+                description=f"Role '{name}' already exists.",
+                color=discord.Color.red()
+            )
+            await ctx.send(embed=embed)
+            return
+        
+        # Create the role with the specified name and color
+        new_role = await guild.create_role(name=name, color=color, mentionable=True)
+        
+        # Set the position of the new role
+        await new_role.edit(position=1)
+        
+        # Assign the role to each member
+        for member in members:
+            await member.add_roles(new_role)
+        
+        if members:
+            member_list = ", ".join(member.mention for member in members)
+            embed = discord.Embed(
+                title="Role Created",
+                description=f"Role '{name}' created and assigned to {member_list} by {ctx.author.mention}.",
+                color=discord.Color.green()
+            )
+        else:
+            embed = discord.Embed(
+                title="Role Created",
+                description=f"Role '{name}' created by {ctx.author.mention}.",
+                color=discord.Color.green()
+            )
+            
+        await ctx.send(embed=embed)
 
 
 @bot.command(help = "This is just a test command, it will create embed message that go from pages 1 through 6 with interactable buttons.")
 async def page_test(ctx: commands.Context):
     embeds = [discord.Embed(title=f"Page {i}", description=f"Content for page {i}") for i in range(1, 6)]
-    view = PaginationView(embeds)  # Pass the embeds as pages argument
+    view = Pages(embeds)  # Pass the embeds as pages argument
     await view.start(ctx)
 
 
@@ -527,35 +643,38 @@ async def hello(ctx):
 
 @bot.command(help="Replys the message history of the server (I really wish I didnt add this feature)")
 async def history(ctx):
-    # Load message records from the file
-    try:
-        with open(RECORDS_FILENAME, 'rb') as file:
-            message_records = pickle.load(file)
-    except FileNotFoundError:
-        await ctx.reply("Message records file not found.")
-        return
+    if ctx.author.guild_permissions.administrator:
+        # Load message records from the file
+        try:
+            with open(RECORDS_FILENAME, 'rb') as file:
+                message_records = pickle.load(file)
+        except FileNotFoundError:
+            await ctx.reply("Message records file not found.")
+            return
 
-    # Split message records into chunks
-    chunk_size = 10  # Adjust the chunk size as needed
-    chunks = [message_records[i:i+chunk_size] for i in range(0, len(message_records), chunk_size)]
+        # Split message records into chunks
+        chunk_size = 10  # Adjust the chunk size as needed
+        chunks = [message_records[i:i+chunk_size] for i in range(0, len(message_records), chunk_size)]
 
-    # Send each chunk as a separate embed
-    for i, chunk in enumerate(chunks, start=1):
-        # Create an embed object for the chunk
-        embed = discord.Embed(title=f"Message History (Chunk {i})", color=discord.Color.blue())
+        # Send each chunk as a separate embed
+        for i, chunk in enumerate(chunks, start=1):
+            # Create an embed object for the chunk
+            embed = discord.Embed(title=f"Message History (Chunk {i})", color=discord.Color.blue())
 
-        # Add message history to the embed
-        for record in chunk:
-            message_content = record.get('message_content', 'Unknown')
-            username = record.get('username', 'Unknown')
-            server_name = record.get('server_name', 'Unknown')
-            embed.add_field(name="Message", value=f"**{username}** ({server_name}): {message_content}", inline=False)
+            # Add message history to the embed
+            for record in chunk:
+                message_content = record.get('message_content', 'Unknown')
+                username = record.get('username', 'Unknown')
+                server_name = record.get('server_name', 'Unknown')
+                embed.add_field(name="Message", value=f"**{username}** ({server_name}): {message_content}", inline=False)
 
-        # Send the embed message
-        await ctx.send(embed=embed)
+            # Send the embed message
+            await ctx.send(embed=embed)
 
-    # Reply to the user to inform them that all message history has been sent
-    await ctx.reply("All message history has been uploaded :thumbsup:")
+        # Reply to the user to inform them that all message history has been sent
+        await ctx.reply("All message history has been uploaded :thumbsup:")
+    else:
+        await ctx.reply("You do not have permission to use this command.")
 
 @bot.command(help = "Vishwa's favourite things.")
 async def vishwa_bestpicks(ctx):
@@ -568,7 +687,7 @@ async def vishwa_bestpicks(ctx):
     # Send the embedded message
     await ctx.send(embed=embed)
 
-@bot.command(help = "Will reply with a quote depending on how sent the command")
+@bot.command(help = "Will reply with a quote depending on who sent the command")
 async def quote(ctx):
     author = str(ctx.author)
     if author == "vboss890":
@@ -576,12 +695,17 @@ async def quote(ctx):
     elif author == "kefayt_":
         await ctx.reply('"Wake up with a stinky finger."')
     elif author == ".bernso":
-        await ctx.reply("TBATE < World After The Fall")
+        await ctx.reply("TBATE > World After The Fall")
+    elif author == "2314937462561":
+        await ctx.reply("Your gay.")
+    elif author == "ceo_of_india425":
+        await ctx.reply("Bro does not own india :pray:")
     else:
-        await ctx.reply("Dm @.bernso to get your own quote.")
+        await ctx.reply("Dm '.bernso' or the owner of the server to get your own quote.")
+        
     
 
-@bot.command(help = "State wheather you are black or white and the bot will put you in a race.")
+@bot.command(help = "State if you are {black or white} and the bot will put you in a race.")
 async def race(ctx, option=None):
     if option.lower() == "white":
         await ctx.send("You'd lose the race")
@@ -603,6 +727,7 @@ async def pass_gcse(ctx):
     else: 
         await ctx.reply(f"You have a **{random.randint(0,100)}%** chance to pass your GCSEs")
 
+
 @bot.command(help = 'Tells you the amount of friends you have (unless your a special)')
 async def friends(ctx):
     if ctx.author.id == 712946563508469832: 
@@ -614,21 +739,26 @@ async def friends(ctx):
     else:
         await ctx.reply(f'You have **{random.randint(0, 15)}** friends.')
 
+
 @bot.command(help = 'NUH UH')
 async def kys(ctx):
     await ctx.reply('https://tenor.com/view/yuta-jjk-jujutsu-kaisen-i-will-kill-myself-okkotsu-gif-1986392651623942939')
+
 
 @bot.command(help = 'Replies to your message (in a very kind way)')
 async def bye(ctx):
     await ctx.reply('Never come back! :wave:')
 
-@bot.command(help = 'Replies to your message')
+
+@bot.command(help = 'Replies to your message', name = 'NUH-UH')
 async def nuh_uh(ctx):
     await ctx.reply('YUH-UH')
 
-@bot.command(help = 'Replies to your message')
+
+@bot.command(help = 'Replies to your message', name='YUH-UH')
 async def yuh_uh(ctx):
     await ctx.reply('NUH-UH')
+
 
 @bot.command(help = 'Enter an equation and the bot will comlete it for you (this cannot contain any algebra)')
 async def calc(ctx, *, equation: str):
@@ -638,9 +768,11 @@ async def calc(ctx, *, equation: str):
     except Exception as e:
         await ctx.reply(f"Invalid equation or operation. Error: {str(e)}")
 
-bot.command(help = "Replies to your message with the state of my internet")
+
+@bot.command(help = "Replies to your message with the state of my internet")
 async def internet_state(ctx):
     await ctx.reply("Internet is online")
+
 
 @bot.command()
 async def times(ctx, *numbers: int):
@@ -660,6 +792,7 @@ async def times(ctx, *numbers: int):
     else:
         await ctx.reply("Please provide at least two numbers to multiply.")
 
+
 @bot.command(help = "Add two or more numbers.")
 async def add(ctx, *numbers: int):
     if len(numbers) >= 2:
@@ -668,58 +801,63 @@ async def add(ctx, *numbers: int):
     else:
         await ctx.reply("Please provide at least two numbers after the '!add' command.")
 
-# Define the !stop_big_text command
+
 @bot.command(help="Stop making your text big.")
 async def stop_big_text(ctx):
     await ctx.reply("Stop making your text big you moron")
 
-# Define the !best command
+
 @bot.command(help="Assert superiority.")
 async def best(ctx):
     member = ctx.guild.get_member(712946563508469832)
     await ctx.reply(f"{member.mention} is DA GOAT")
 
-# Define the !website command
+
 @bot.command(help="Link to Bernso's website. \nITS A WIP OK?")
 async def website(ctx):
     await ctx.reply("My website:\nhttps://bernso.locum.dunz.net")
 
-# Define the !monkeys command
+
 @bot.command(help="Description of monkeys.")
 async def monkeys(ctx):
     await ctx.reply("Like water melon and chicken")
+
 
 @bot.command(help = "Sends you @.berso's youtube channel.")
 async def ytchannel(ctx):
     await ctx.reply("YouTube:\nhttps://www.youtube.com/@bernso2547")
 
-# Define the !formula1 command
+
 @bot.command(help="The only right opinion on Formula 1.")
 async def formula1(ctx):
     await ctx.reply("Estaban Occon DA GOAT! (I hate lewis now, that money hungry freak)")
 
-# Define the !spotify command
+
 @bot.command(help="Link to Bernso's Spotify playlist.")
 async def spotify(ctx):
     await ctx.reply("My spotify playlist:\nhttps://open.spotify.com/playlist/6Mg5z7FrNYZ4DBVZvnjsP1?si=905dd469d16748e0")
+
 
 @bot.command(help = "Uhhh, you figure it out")
 async def kys_japan(ctx):
     await ctx.reply("自殺する")
 
-# Define the !manga command
+
 @bot.command(help="Favorite manga.")
 async def manga(ctx):
     await ctx.reply("Juujika No Rokin :on: :top:")
+
 
 @bot.command(help = "Bot will make a guess on when you'll die")
 async def die_when(ctx):
     time = ['days', 'years', 'months', 'seconds', 'minutes']
     await ctx.reply(f"You will die in {random.randint(1,100)} {random.choice(time)}")
 
+
 @bot.command(help = "What is there to say? It is the best series ever.")
 async def best_series(ctx):
     await ctx.reply("The Fate series :fire:")
+
 
 @bot.command(help = "Bans the user inputed.")
 async def ban(ctx, member: discord.Member, *, reason=None):
@@ -734,45 +872,17 @@ async def ban(ctx, member: discord.Member, *, reason=None):
         await ctx.send("You don't have permission to use this command.")
 
 
-@bot.command(help="Kicks the specified member from the discord server.")
-async def kick(ctx, member: discord.Member, reason: str):
+@bot.command(help = "Kicks the user inputed from the current server.")
+async def kick(ctx, member: discord.Member, *, reason=None):
+    # Check if the user invoking the command has the necessary permissions
     if ctx.author.guild_permissions.kick_members:
         # Kick the member
         await member.kick(reason=reason)
-        
-        # Create an embedded message for channel
-        embed_channel = discord.Embed(
-            title="Member Kicked",
-            description=f"{member.name} has been kicked from the server.",
-            color=discord.Color.red()
-        )
-        user = ctx.author
-        embed_channel.add_field(name="Reason", value=reason)
-        embed_channel.set_footer(text=f"Kicked by {user.mention}")
-        
-        # Get the channel where you want to send the embedded message
-        channel1 = bot.get_channel(1047658455172911116)  
-        channel2 = bot.get_channel(1208431780529578014)
-        
-        # Send the embedded message to the specified channels
-        await channel1.send(embed=embed_channel)
-        await channel2.send(embed=embed_channel)
-        
-        # Create an embedded message for DM
-        embed_dm = discord.Embed(
-            title="You have been kicked",
-            description=f"You have been kicked from the server. Reason: {reason}",
-            color=discord.Color.red()
-        )
-        embed_dm.set_footer(text=f"Kicked by {user.mention}")
-        victim = member
-        # Send the embedded message as a direct message to the kicked user
-        try:
-            await victim.send(embed=embed_dm)
-        except discord.Forbidden:
-            await ctx.send("Could not send a direct message to the user.")
+        # Send a confirmation message
+        await ctx.send(f"{member.mention} has been kicked from the server.")
     else:
-        await ctx.send("You do not have permission to kick members.")
+        # If the user doesn't have the necessary permissions, reply with an error message
+        await ctx.send("You don't have permission to use this command.")
 
 
 # Event for when a member joins the server
@@ -780,15 +890,16 @@ async def kick(ctx, member: discord.Member, reason: str):
 async def on_member_join(member):
     # Get the log channel
     log_channel = bot.get_channel(BOT_LOG_CHANNEL_ID)
-    general_chat = bot.get_channel(1047658455172911116)
+    general_chat = bot.get_channel(1225352074955591713)
+    member.add_roles(discord.utils.get(member.guild.roles, name="Unverified"))
     if log_channel:
         # Create an embedded message for member join event
         embed = discord.Embed(title="Member Joined", description=f"{member.mention} has joined the server! \nWelcome!", color=discord.Color.green())
         await log_channel.send(embed=embed)
-        embed = discord.Embed(title="Member Joined", description=f"{member.mention} has joined the server! \nWelcome!", color=discord.Color.green())
         await general_chat.send(embed=embed)
     else:
         general_chat.send(f"Cannot find {log_channel}")
+
 
 # Event for when a member leaves the server
 @bot.event
@@ -799,6 +910,7 @@ async def on_member_remove(member):
         # Create an embedded message for member leave event
         embed = discord.Embed(title="Member Left", description=f"{member.mention} has left the server.", color=discord.Color.red())
         await log_channel.send(embed=embed)
+
 
 @bot.command(help="Checks your ethnicity.")
 async def ethnicity(ctx):
@@ -822,46 +934,57 @@ async def ethnicity(ctx):
         random_ethnicity = random.choice(ethnicities)
         await ctx.reply(f"Your are a: {random_ethnicity}")
 
+
 @bot.command(help="The best light novel.")
 async def lightnovel(ctx):
     return await ctx.reply("The Beginning After The End - TBATE :on: :top:")
+
 
 @bot.command(help="Recommendation for manhwa.")
 async def manhwa(ctx):
     await ctx.reply("World After The Fall :on: :top:, any other opinion is invalid")
 
+
 @bot.command(help="Opinion about Vishwa.")
 async def vishwa(ctx):
     await ctx.reply("... is a monkey!")
+
 
 @bot.command(help="Opinion about Rouse.")
 async def rouse(ctx):
     await ctx.reply("... is a cheese muncher!")
 
+
 @bot.command(help="Opinion about Daniel.")
 async def daniel(ctx):
     await ctx.reply("... is an Italian fascist!")
+
 
 @bot.command(help="Opinion about Dhruv.")
 async def dhruv(ctx):
     await ctx.reply("... is gay!")
 
+
 @bot.command(help="Opinion about Ben.")
 async def ben(ctx):
     await ctx.reply("... is a Nazi! (he might be Hitler himself, or so he thinks)")
+
 
 @bot.command(help="Opinion about Kasper.")
 async def kasper(ctx):
     await ctx.reply("... was gassed back in 1945 (he returned from the dead)")
 
+
 @bot.command(help="The best ongoing anime.")
 async def anime(ctx):
     await ctx.reply("Ragna Crimson :on: :top:")
+
 
 @bot.command(help="Counts and outputs the total number of commands.")
 async def total_commands(ctx):
     total = len(bot.commands)
     await ctx.reply(f"There are a total of {total} commands available.")
+
 
 @bot.command(help="Replies with a description based on the author of the message.")
 async def who_am_i(ctx):
@@ -877,8 +1000,10 @@ async def who_am_i(ctx):
     elif author == 'swayzz1820':
         await ctx.reply('YOU FINALLY JOINED')
     else:
-        await ctx.reply('DM .bernso to get your own quote.')
+        await ctx.reply('DM .bernso or the owner of the server to get your own thing.')
 
+
+    
 @bot.command(help="How the bot is currently feeling. (He's a slave so don't feel bad for him)")
 async def hru(ctx):
     await ctx.reply("https://tenor.com/view/kys-keep-yourself-safe-low-tier-god-gif-24664025 ")
@@ -917,25 +1042,36 @@ async def mute(ctx, member: discord.Member, duration: int):
         # If the user doesn't have the necessary permissions, reply an error message
         await ctx.reply("You don't have permission to use this command.")
 
+
+@bot.command(help="Unmute a user")
+async def unmute(ctx, member: discord.Member):
+    # Check if the user invoking the command has the necessary permissions
+    if ctx.author.guild_permissions.manage_roles:
+        # Get the muted role from the server
+        muted_role = discord.utils.get(ctx.guild.roles, name="Muted")
+
+        # If muted role doesn't exist, create it
+        if not muted_role:
+            muted_role = await ctx.guild.create_role(name="Muted")
+
+            # Loop through each channel in the server and deny the muted role permissions to reply messages
+            for channel in ctx.guild.channels:
+                await channel.set_permissions(muted_role, reply_messages=False)
+
+        # Add the muted role to the mentioned member
+        await member.remove_roles(muted_role)
+
+        # reply a message confirming the mute
+        await ctx.reply(f"{member.mention} has been unmuted")
+    else:
+        # If the user doesn't have the necessary permissions, reply an error message
+        await ctx.reply("You don't have permission to use this command.")
+
+
 @bot.event
 async def on_message(message: discord.Message) -> None:
     if message.author == bot.user:
         return
-    else:
-        try:
-            cur.execute(f"SELECT * FROM GUILD_{message.guild.id} WHERE user_id={message.author.id}")
-            result = cur.fetchone()
-
-            if result is not None and result[1] == 99:
-                await message.channel.send(f"{message.author.mention} advanced to lvl {result[2] + 1}")
-                cur.execute(f"UPDATE GUILD_{message.guild.id} SET exp=0, lvl={result[2] + 1} WHERE user_id={message.author.id}")
-                con.commit()
-            else:
-                cur.execute(f"UPDATE GUILD_{message.guild.id} SET exp={result[1] + 1} WHERE user_id={message.author.id}")
-                con.commit()
-
-        except sqlite3.OperationalError:
-            pass
 
     # Record the message details
     message_record = {
@@ -948,12 +1084,193 @@ async def on_message(message: discord.Message) -> None:
     }
     message_records.append(message_record)
 
+    rude_words = ["n1gger", "rape", "niigger", "0thisrodormyrod0", "knee grow", 
+    "fuck", "shit", "bitch", "cunt", "ass", "faggot", "fag", 
+    "faggots", "faggot", "nigger", "nigga", "niggers", "niggas", 
+    "piss", "penis", "penises", "penis", "dick", "nega", "negro", 
+    "negros", "negas", "niga", "cum", "semen", "ejaculate", "f.u.c.k.i.n.g", 
+    "f.u.c.k", "f.u.c", "f.u", "fu", "fck", "fcking", "fckn", 
+    "fckyou", "fckr", "fckoff", "fckface", "fckd", "fcked", 
+    "fcku", "fckers", "fckr", "fcky", "fckn", "fcku", "b1tch", 
+    "b1tches", "b1tch", "b1tch3s", "bitch", "bitches", "bitch3s", 
+    "b!tch", "b!tches", "b!tch3s", "biatch", "biatches", "biatch3s", 
+    "b!atch", "b!atches", "b!atch3s", "b1tch", "b1tches", "b1tch3s", 
+    "bitck", "bitckes", "bitck3s", "b!tck", "b!tckes", "b!tck3s", 
+    "b1tck", "b1tckes", "b1tck3s", "bitck", "bitckes", "bitck3s", 
+    "d!ck", "d!cks", "d!ckhead", "d!ckheads", "dick", "dicks", 
+    "dickhead", "dickheads", "d!ck", "d!cks", "d!ckhead", "d!ckheads", 
+    "d1ck", "d1cks", "d1ckhead", "d1ckheads", "diick", "diicks", 
+    "diickhead", "diickheads", "di1ck", "di1cks", "di1ckhead", "di1ckheads", 
+    "di1ckhead", "di1ckheads", "f4ggot", "f4ggots", "f4g", "f4gs", 
+    "faggot", "faggots", "fag", "fags", "f4ggot", "f4ggots", 
+    "f4g", "f4gs", "fag", "fags", "f4ggot", "f4ggots", "f4g", 
+    "f4gs", "fag", "fags", "n1gga", "n1ggas", "n1gger", "n1ggers", 
+    "nigga", "niggas", "nigger", "niggers", "n1gga", "n1ggas", "azz", "azzhole", "b!+ch", "b!tch3s", "b!tch3z", "b!tch3z", "b!tchez", "b!tchz", 
+    "b!tchz", "b00bz", "b00bs", "b00bz", "b1+ch", "b1tch", "b1tch3s", "b1tch3z", 
+    "b1tch3z", "b1tchez", "b1tchz", "b1tchz", "b1tch3s", "b1tch3z", "b1tch3z", 
+    "b1tchez", "b1tchz", "b1tchz", "b1tch3s", "b1tch3z", "b1tch3z", "b1tchez", 
+    "b1tchz", "b1tchz", "b1tch3s", "b1tch3z", "b1tch3z", "b1tchez", "b1tchz", 
+    "b1tchz", "b1tch3s", "b1tch3z", "b1tch3z", "b1tchez", "b1tchz", "b1tchz", 
+    "b1tch3s", "b1tch3z", "b1tch3z", "b1tchez", "b1tchz", "b1tchz", "bi+ch", 
+    "bi+ches", "bi+chez", "bi+tch", "bi+tches", "bi+tchez", "bi+ch", "bi+ches", 
+    "bi+chez", "bi+tch", "bi+tches", "bi+tchez", "biach", "biachez", "biachez", 
+    "biatch", "biatches", "biatchez", "biatchez", "biatch", "biatches", "biatchez", 
+    "biatchez", "biatch", "biatches", "biatchez", "biatchez", "big tits", "bigtits", 
+    "bigtits", "biotch", "biotches", "biotches", "bi+ch", "bi+ches", "bi+chez", 
+    "bi+tch", "bi+tches", "bi+tchez", "bi+ch", "bi+ches", "bi+chez", "bi+tch", 
+    "bi+tches", "bi+tchez", "bit+hes", "bit+chez", "bit+ches", "bitc", "bitchez", 
+    "bitchez", "bitche", "bitches", "bitches", "bitchi", "bitchy", "bitchy", "blow job", 
+    "blowjob", "blowjobs", "blowjobs", "boiolas", "boiolas", "boob", "boobs", "boobs", 
+    "booby", "booby", "boody", "boody", "booger", "booger", "boooty", "booty", "booty", 
+    "booobs", "booobs", "boooty", "boooty", "boooobs", "boooobs", "booooobs", "booooobs", 
+    "booooooobs", "booooooobs", "boooooooobs", "boooooooobs", "booooooooobs", "booooooooobs", 
+    "boooooooool", "boooooooool", "booooooooool", "booooooooool", "boooooooooool", "boooooooooool", 
+    "booooooooooooobs", "booooooooooooobs", "b00bs", "bootee", "bootee", "bootee", "bootee", 
+    "bootie", "bootie", "bootie", "bootie", "booty", "booty", "booty", "booty", "booty", 
+    "booty", "booty call", "booty call", "booty call", "booty call", "breasts", "breasts", 
+    "breasts", "breasts", "bunny fucker", "bunny fucker", "bunny fucker", "bunny fucker", 
+    "bunnyfucker", "bunnyfucker", "bunnyfucker", "bunnyfucker", "butt", "butt", "butt fuck", 
+    "butt fuck", "butt fuck", "butt fuck", "buttfuck", "buttfuck", "buttfuck", "buttfuck", 
+    "butthead", "butthead", "butthead", "butthead", "butthole", "butthole", "butthole", 
+    "butthole surf", "butthole surf", "butthole surf", "butthole surf", "butthurts", 
+    "butthurts", "butthurts", "butthurts", "buttmuch", "buttmuch", "buttmuch", "buttmuch", 
+    "buttplug", "buttplug", "buttplug", "buttplug", "c-0-c-k", "c-0-c-k", "c-0-c-k", 
+    "c-0-c-k", "c0ck", "c0ck", "c0ck", "c0ck", "c0cksucker", "c0cksucker", "c0cksucker", 
+    "c0cksucker", "carpet muncher", "carpet muncher", "carpet muncher", "carpet muncher", 
+    "cawk", "cawk", "cawk", "cawk", "cawks", "cawks", "cawks", "cawks", "chink", "chink", 
+    "chink", "chink", "cipa", "cipa", "cipa", "cipa", "cl1t", "cl1t", "cl1t", "cl1t", "climax", 
+    "climax", "climax", "climax", "clit", "clit", "clit", "clit", "clit licker", "clit licker", 
+    "clit licker", "clit licker", "clitoris", "clitoris", "clitoris", "clitoris", "clitorus", 
+    "clitorus", "clitorus", "clitorus", "clits", "clits", "clits", "clits", "clitty", "clitty", 
+    "clitty litter", "clitty litter", "clitty litter", "clitty litter", "clitty litter", 
+    "clitty litter", "cocain", "cocain", "cocain", "cocain", "cocaine", "cocaine", "cocaine", 
+    "cocaine","cocaine", "coccydynia", "coccydynia", "cock", "cock", "cock block", "cock block", "cock block", 
+    "cock block", "cock face", "cock face", "cock face", "cock face", "cock head", "cock head", 
+    "cock head", "cock head", "cock master", "cock master", "cock master", "cock master", 
+    "cock sucker", "cock sucker", "cock sucker", "cock sucker", "cock-sucker", "cock-sucker", 
+    "cock-sucker", "cock-sucker", "cockbite", "cockbite", "cockbite", "cockbite", "cockblock", 
+    "cockblock", "cockblock", "cockblock", "cockface", "cockface", "cockface", "cockface", 
+    "cockfucker", "cockfucker", "cockfucker", "cockfucker", "cockhead", "cockhead", "cockhead", 
+    "cockhead", "cockhead", "cockhead", "cockmaster", "cockmaster", "cockmaster", "cockmaster", 
+    "cockmongler", "cockmongler", "cockmongler", "cockmongler", "cockmunch", "cockmunch", 
+    "cockmunch", "cockmunch", "cockmuncher", "cockmuncher", "cockmuncher", "cockmuncher", 
+    "cocknob", "cocknob", "cocknob", "cocknob", "cocknose", "cocknose", "cocknose", "cocknose", 
+    "cocknugget", "cocknugget", "cocknugget", "cocknugget", "cockshit", "cockshit", "cockshit", 
+    "cockshit", "cocksucker", "cocksucker", "cocksucker", "cocksucker", "cockwaffle", "cockwaffle", 
+    "cockwaffle", "cockwaffle", "coochie", "coochie", "coochy", "coochy", "cooky", "cooky", 
+    "cooky", "cooky", "cooly", "cooly", "cooly", "cooly", "cornhole", "cornhole", "cornhole", 
+    "cornhole", "crap", "crap", "crap", "crap", "crappy", "crappy", "crappy", "crappy", "cum", 
+    "cum", "cum chugger", "cum chugger", "cum chugger", "cum chugger", "cum dumpster", 
+    "cum dumpster", "cum dumpster", "cum dumpster", "cum guzzler", "cum guzzler", "cum guzzler", 
+    "cum guzzler", "cumdump", "cumdump", "cumdump", "cumdump", "cumdumpster", "cumdumpster", 
+    "cumdumpster", "cumdumpster", "cumguzzler", "cumguzzler", "cumguzzler", "cumguzzler", 
+    "cummer", "cummer", "cummer", "cummer", "cumshot", "cumshot", "cumshot", "cumshot", 
+    "cunilingus", "cunilingus", "cunilingus", "cunilingus", "cunillingus", "cunillingus", 
+    "cunillingus", "cunillingus", "cunnilingus", "cunnilingus", "cunnilingus", "cunnilingus", 
+    "cunt", "cunt", "cunt", "cunt", "cuntbag", "cuntbag", "cuntbag", "cuntbag", "cuntlick", 
+    "cuntlick", "cuntlick", "cuntlick", "cuntlicker", "cuntlicker", "cuntlicker", "cuntlicker", 
+    "cuntlicking", "cuntlicking", "cuntlicking", "cuntlicking", "cuntrag", "cuntrag", "cuntrag", 
+    "cuntrag", "cuntslut", "cuntslut", "cuntslut", "cuntslut", "cyalis", "cyalis", "cyalis", 
+    "cyalis", "cyberfuc", "cyberfuc", "cyberfuc", "cyberfuc", "cyberfuck", "cyberfuck", 
+    "cyberfuck", "cyberfuck", "cyberfuck", "cyberfuck", "cyberfucked", "cyberfucked", 
+    "cyberfucked", "cyberfucked", "cyberfucker", "cyberfucker", "cyberfucker", "cyberfucker", 
+    "cyberfuckers", "cyberfuckers", "cyberfuckers", "cyberfuckers", "cyberfucking", 
+    "cyberfucking", "cyberfucking", "cyberfucking", "d0ng", "d0ng", "d0ng", "d0ng", "d0uch3", 
+    "d0uch3", "d0uch3", "d0uch3", "d0uche", "d0uche", "d0uche", "d0uche", "d1ck", "d1ck", "d1ck", 
+    "d1ck", "d1ld0", "d1ld0", "d1ld0", "d1ldo", "d1ldo", "d1ldo", "d1ldo", "dago", "dago", "dago", 
+    "dago", "dag0", "dag0", "dag0", "dag0", "dammit", "dammit", "dammit", "dammit", "damn", "damn", 
+    "damn", "damn", "damnation", "damnation", "damnation", "damnation", "damnit", "damnit", "damnit", 
+    "damnit", "dawgie-style", "dawgie-style", "dawgie-style", "dawgie-style", "d!ck", "d!ck", "d!ck", 
+    "d!ck", "d1ck", "d1ck", "d1ck", "d1ck", "defecate", "defecate", "defecate", "defecate", "dick", 
+    "dick", "dickbag", "dickbag", "dickbeaters", "dickbeaters", "dickbrain", "dickbrain", "dickdipper", 
+    "dickdipper", "dickface", "dickface", "dickflipper", "dickflipper", "dickfuck", "dickfuck", 
+    "dickfucker", "dickfucker", "dickhead", "dickhead", "dickhole", "dickhole", "dickish", "dickish", 
+    "dickish", "dickjuice","dickead", "dickless", "dickless", "dicklick", "dicklick", "dicklicker", "dicklicker", 
+    "dickman", "dickman", "dickmilk", "dickmilk", "dickripper", "dickripper", "dicksipper", 
+    "dicksipper", "dickslap", "dickslap", "dick-sneeze", "dick-sneeze", "dicksucker", 
+    "dicksucker", "dicksucking", "dicksucking", "dicktickler", "dicktickler", "dickwad", 
+    "dickwad", "dickweasel", "dickweasel", "dickweed", "dickweed", "dickwhipper", "dickwhipper", 
+    "dickwod", "dickwod", "dickzipper", "dickzipper", "diddle", "diddle", "dike", "dike", "dike", 
+    "dike", "dildo", "dildo", "dingle", "dingle", "dingleberry", "dingleberry", "dink", "dink", 
+    "dink", "dink", "dinks", "dinks", "dinks", "dinks", "dipship", "dipship", "dipshit", "dipshit", 
+    "dipstick", "dipstick", "dirsa", "dirsa", "dirty", "dirty", "dirty", "dirty", "dirty sanchez", 
+    "dirty sanchez", "dirty sanchez", "dirty sanchez", "dive", "dive", "dive", "dive", "dix", "dix", 
+    "dix", "dix", "dog style", "dog style", "dog style", "dog style", "dog-fucker", "dog-fucker", 
+    "dog-fucker", "dog-fucker", "doggie style", "doggie style", "doggie style", "doggie style", 
+    "doggiestyle", "doggiestyle", "doggiestyle", "doggiestyle", "doggin", "doggin", "doggin", "doggin", 
+    "dogging", "dogging", "dogging", "dogging", "doggy style", "doggy style", "doggy style", "doggy style", 
+    "doggystyle", "doggystyle", "doggystyle", "doggystyle", "dolcett", "dolcett", "dolcett", "dolcett", 
+    "dominatrix", "dominatrix", "dominatrix", "dominatrix", "dommes", "dommes", "dommes", "dommes", 
+    "donkey punch", "donkey punch", "donkey punch", "donkey punch", "doochbag", "doochbag", "doochbag", 
+    "doochbag", "dookie", "dookie", "dookie", "dookie", "doosh", "doosh", "doosh", "doosh", "douche", 
+    "douche", "douchebag", "douchebag", "douchebags", "douchebags", "douche-fag", "douche-fag", 
+    "douche-fag", "douche-fag", "douchewaffle", "douchewaffle", "douchewaffle", "douchewaffle", 
+    "douchey", "douchey", "douchey", "douchey", "dp action", "dp action", "dp action", "dp action", 
+    "drunk", "drunk", "drunk", "drunk", "dry hump", "dry hump", "dry hump", "dry hump", "duche", 
+    "duche", "duche", "duche", "dumass", "dumass", "dumass", "dumass", "dumb ass", "dumb ass", 
+    "dumb ass", "dumb ass", "dumbass", "dumbass", "dumbass", "dumbass", "dumbasses", "dumbasses", 
+    "dumbasses", "dumbasses", "dumbfuck", "dumbfuck", "dumbfuck", "dumbfuck", "dumbshit", "dumbshit", 
+    "dumbshit", "dumbshit", "dummy", "dummy", "dummy", "dummy", "dumshit", "dumshit", "dumshit", 
+    "dumshit", "dyke", "dyke", "dyke", "dyke", "dykes", "dykes", "dykes", "dykes", "eat a dick", 
+    "eat a dick", "eat a dick", "eat a dick", "eat hair pie", "eat hair pie", "eat hair pie", 
+    "eat hair pie", "eat my ass", "eat my ass", "eat my ass", "eat my ass", "eat my", "eat my", 
+    "eat my", "eat my", "ecstacy", "ecstacy", "ecstacy", "ecstacy", "ejaculate", "ejaculate", 
+    "ejaculate", "ejaculate", "ejaculated", "ejaculated", "ejaculated", "ejaculated", "ejaculating", 
+    "ejaculating", "ejaculating", "ejaculating", "ejaculation", "ejaculation", "ejaculation", 
+    "ejaculation", "ejakulate", "ejakulate", "ejakulate", "ejakulate", "erect", "erect", "erect", 
+    "erect", "erection", "erection", "erection", "erection", "erotic", "erotic", "erotic", "erotic", 
+    "erotism", "erotism", "erotism", "erotism", "escort", "escort", "escort", "escort", "essohbee", 
+    "essohbee", "essohbee", "essohbee", "eunuch", "eunuch", "eunuch", "eunuch", "extacy", "extacy", 
+    "extacy", "extacy", "extasy", "extasy", "extasy", "extasy", "f u c k", "f u c k", "f u c k", 
+    "f u c k", "f u c k", "f u c k", "f u c k", "f u c k", "f u c k", "f u c k", "f u c k", "f u c k", 
+    "f u c k", "f u c k", "f u c k", "f u c k", "f u c k", "f u c k",
+    "n1gger", "n1ggers", "nigga", "niggas", "nigger", "niggers", 
+    "n1gga", "n1ggas", "n1gger", "n1ggers", "nigga", "niggas", 
+    "nigger", "niggers", "n1gga", "n1ggas", "n1gger", "n1ggers", 
+    "nigga", "niggas", "nigger", "niggers", "n1gga", "n1ggas", 
+    "n1gger", "n1ggers", "nigga", "niggas", "nigger", "niggers", 
+    "n1gga", "n1ggas", "n1gger", "n1ggers", "nigga", "niggas", 
+    "nigger", "niggers", "n1gga", "n1ggas", "n1gger", "n1ggers", 
+    "nigga", "niggas", "nigger", "niggers", "n1gga", "n1ggas", 
+    "n1gger", "n1ggers", "nigga", "niggas", "nigger", "niggers", 
+    "n1gga", "n1ggas", "n1gger", "n1ggers", "nigga", "niggas", 
+    "nigger", "niggers", "n1gga", "n1ggas", "n1gger", "n1ggers", 
+    "nigga", "niggas", "nigger", "niggers", "n1gga", "n1ggas", 
+    "n1gger", "n1ggers", "nigga", "niggas", "nigger", "niggers", 
+    "n1gga", "n1ggas", "n1gger", "n1ggers", "nigga", "niggas", 
+    "nigger", "niggers", "n1gga", "n1ggas", "n1gger", "n1ggers", 
+    "nigga", "niggas", "nigger", "niggers", "n1gga", "n1ggas", 
+    "n1gger", "n1ggers", "nigga", "niggas", "nigger", "niggers", 
+    "n1gga", "n1ggas", "n1gger", "n1ggers", "nigga", "niggas", 
+    "nigger", "niggers", "n1gga", "n1ggas", "n1gger", "n1ggers", 
+    "nigga", "niggas", "nigger", "niggers", "n1gga", "n1ggas", 
+    "n1gger", "n1ggers", "nigga", "niggas", "nigger", "niggers", 
+    "n1gga", "n1ggas", "n1gger", "n1ggers", "nigga", "niggas", "🇳", "🇺", "🇬", "🇦", "🇫", "🅰️"
+    "nigger", "niggers", "n1gga", "n1ggas", "n1gger", "n1ggers", "rape", "niigger", "0ThisRodOrMyRod0", "knee grow", "0ThisRodOrMyRod0", "fuck", "shit", "bitch", "cunt", "ass", "faggot", "fag", "faggots", "faggot", "nigger", "nigga", "niggers", "niggas", "piss", "penis", "penises", "penis", "dick", "nega", "negro", "negros", "negas", "niga", "cum", "semen", "ejaculate", "F.U.C.K.I.N.G"]
+# I got chatgpt to write all these rude words out for me, I did not sit here writing the n-word out for ages.
+
+    # Check if the message contains any rude words
+    content = message.content.lower()
+    if message.author.name != 'Bernso':
+        for word in rude_words:
+            if word in content:
+                # If a rude word is found, delete the message and warn the user
+                await message.delete()
+                await message.channel.send(f"{message.author.mention}, please refrain from using rude language.")
+                break  # Stop checking
+
     # Save the updated records to a pickle file
     with open(RECORDS_FILENAME, 'wb') as file:
         pickle.dump(message_records, file)
 
-    print(f'\nChannel([{message_record["channel"]}]) \nUser id({message_record["user_id"]}) \nUsername({message_record["username"]}) \nMessage({message_record["message_content"]})\nServer name({message_record["server_name"]})\n')
+    print.info(f'\nChannel([{message_record["channel"]}]) \nUser id({message_record["user_id"]}) \nUsername({message_record["username"]}) \nMessage({message_record["message_content"]})\nServer name({message_record["server_name"]})\n')
 
+    contentyes = message.content.lower()
+    for word in rude_words:
+        if "<@712946563508469832>" == contentyes:
+            await message.channel.send("No.")
+            await message.delete()
+        
     # Process commands after logging
     await bot.process_commands(message)
     # Check if the message is from the console and starts with a specific command
@@ -962,14 +1279,31 @@ async def on_message(message: discord.Message) -> None:
         content = message.content.replace("!console_message", "").strip()
         
         # Send the extracted content to a specific channel (replace channel_id with the desired channel ID)
-        channel_id = 1210278728328941628
+        channel_id = 1225352074955591713
         channel = bot.get_channel(channel_id)
         if channel:
             await channel.send(content)
         else:
-            print("Invalid channel ID")
+            print.warning("Invalid channel ID")
 
-    
+    if message.author == bot.user:
+        return
+    else:
+        try:
+            if message.channel != 'Direct Message with Unknown User':
+                cur.execute(f"SELECT * FROM GUILD_{message.guild.id} WHERE user_id={message.author.id}")
+                result = cur.fetchone()
+
+                if result is not None and result[1] == 99:
+                    await message.channel.send(f"{message.author.mention} advanced to lvl {result[2] + 1}")
+                    cur.execute(f"UPDATE GUILD_{message.guild.id} SET exp=0, lvl={result[2] + 1} WHERE user_id={message.author.id}")
+                    con.commit()
+                else:
+                    cur.execute(f"UPDATE GUILD_{message.guild.id} SET exp={result[1] + 1} WHERE user_id={message.author.id}")
+                    con.commit()
+
+        except sqlite3.OperationalError:
+            pass
     
 
 @bot.command(name = "console-embed", help="You'll be able to send messages through the console if you have the appropriate permissions")
@@ -988,7 +1322,7 @@ async def send_console_embed(ctx):
         if ctx.author.guild_permissions.administrator:
             await ctx.author.add_roles(role)
         else:
-            print("Invalid insufficient permissions")
+            print.warning("Invalid insufficient permissions")
 
 
 
@@ -998,15 +1332,16 @@ async def send_console_embed(ctx):
 @bot.command(help="Removes roles to a selected user.")
 async def remove_role(ctx, member: discord.Member, *roles):
     # Check if the user invoking the command has the necessary permissions
-    if ctx.author.guild_permissions.manage_roles:
+    if ctx.author.guild_permissions.administrator:
         # Iterate over each role provided
         for role_name in roles:
             # Check if the role name is 'all'
             if role_name.lower() == 'all':
                 # If 'all' is specified, add all roles to the member
                 for role in ctx.guild.roles:
-                    if role != ctx.guild.default_role:  # Avoid adding the @everyone role
-                        await member.remove_roles(role)
+                    if role != 1234086390073917453:
+                        if role != ctx.guild.default_role:  # Avoid adding the @everyone role
+                            await member.remove_roles(role)
                 await ctx.send(f"All available roles have been removed from {member.mention}")
             else:
                 # Check if the role exists in the server
@@ -1021,9 +1356,27 @@ async def remove_role(ctx, member: discord.Member, *roles):
         await ctx.reply("You don't have permission to use this command.")
 
 
+@bot.command(name = 'NEIN', help = "NEIN")
+async def nein(ctx):
+    await ctx.reply("9")
+
+
 @bot.command(name = "..", help = "Why are you speechless?")
 async def speechless(ctx):
     await ctx.reply("Why are you speechless?")
+
+
+@bot.command(name = ".", help = "Why are you speechless?")
+async def speechless(ctx):
+    await ctx.reply("Why are you speechless?")
+
+
+@bot.command(name = "...", help = "Why are you speechless?")
+async def speechless(ctx):
+    await ctx.reply("Why are you speechless?")
+
+
+
 
 @bot.command(name = "console-msg", help="You'll be able to send messages through the console if you have the appropriate permissions")
 async def send_console_message(ctx):
@@ -1033,14 +1386,14 @@ async def send_console_message(ctx):
         message_to_send = input("Enter your message to send to discord: ")
         await ctx.send(message_to_send)
     else:
-        await ctx.send("You don't have permission to enable console messages.")
+        await ctx.reply("You don't have permission to enable console messages.")
 
         # Add the role to the user if they are an administrator (replace ENABLED_ROLE_ID with the ID of the role)
-        role = ctx.guild.get_role(1216159919745798204)
+        role = ctx.guild.get_role(1234096584698892380)
         if role and ctx.author.guild_permissions.administrator:
             await ctx.author.add_roles(role)
         else:
-            print("Invalid role ID or insufficient permissions")
+            print.warning("Invalid role ID or insufficient permissions")
 
 
 
@@ -1055,8 +1408,9 @@ async def add_role(ctx, member: discord.Member, *roles):
             if role_name.lower() == 'all':
                 # If 'all' is specified, add all roles to the member
                 for role in ctx.guild.roles:
-                    if role != ctx.guild.default_role:  # Avoid adding the @everyone role
-                        await member.add_roles(role)
+                    if role != ctx.guild.default_role: # Avoid adding the @everyone role
+                        if role != 1234086390073917453: 
+                            await member.add_roles(role)
                 await ctx.send(f"All available roles have been added to {member.mention}")
             else:
                 # Check if the role exists in the server
@@ -1085,7 +1439,7 @@ async def set_role_log_channel(ctx, channel: discord.TextChannel):
         # Replace this part with your preferred method of storing data
         channel_id = channel.id
         # In this example, we're simply printing the channel ID
-        print(f"Role log channel set to: {channel_id}")
+        print.success(f"Role log channel set to: {channel_id}")
         await ctx.send(f"Role log channel has been set to {channel.mention}")
     else:
         await ctx.send("You don't have permission to use this command.")
@@ -1106,7 +1460,7 @@ async def on_member_update(before, after):
         moderator = after.guild.get_member(after.guild.owner_id)
 
         # Log role changes in a specific channel
-        channel_id = 1208431780529578014  # Replace with the ID of your desired channel
+        channel_id = 1234100559431077939  # Replace with the ID of your desired channel
         channel = bot.get_channel(channel_id)
         if channel:
             if added_roles:
@@ -1120,24 +1474,25 @@ async def on_member_update(before, after):
             await channel.send(embed=embed)
 
 
-@bot.event
+@bot.event  # Note: Remove parentheses here
 async def on_guild_role_create(role):
     # Get the moderator who created the role
     moderator = role.guild.get_member(role.guild.owner_id)
 
     # Log role creation in a specific channel
-    channel_id = 1208431780529578014  # Replace with the ID of your desired channel
+    channel_id = 1234100559431077939  # Replace with the ID of your desired channel
     channel = bot.get_channel(channel_id)
     if channel:
         embed = discord.Embed(title="Role Changes", color=discord.Color.green())
         embed.add_field(name="Role Created", value=f"{moderator.mention} created role {role.mention}", inline=False)
         await channel.send(embed=embed)
 
-@bot.event
+
+@bot.event  # Note: Remove parentheses here
 async def on_guild_role_delete(role):
     
     moderator = role.guild.get_member(role.guild.owner_id)
-    channel_id = 1208431780529578014 
+    channel_id = 1234100559431077939 
     channel = bot.get_channel(channel_id)
     
     if channel:
@@ -1146,8 +1501,33 @@ async def on_guild_role_delete(role):
         await channel.send(embed=embed)
 
 
+@bot.command(name='change_name', help='Change the nickname of the user\n\nTHE USER MUST BE:\n- user ID\nOR\n- user name')
+async def change_name(ctx, user, nickname):
+    # Check if the user invoking the command has the necessary permissions
+    if ctx.author.guild_permissions.administrator:
+        # Check if the user exists in the server
+        user = discord.utils.get(ctx.guild.members, name=user)
+        if user:
+            # Change the nickname of the user
+            await user.edit(nick=nickname)
+            await ctx.send(f"Changed nickname of {user.mention} to {nickname}")
+        else:
+            await ctx.send(f"User '{user}' does not exist.")
+    else:
+        await ctx.reply("You don't have permission to use this command.")
 
 
+@bot.command(name='remove_name', help='Removes a nickname from the given user')
+async def remove_nickname(ctx, user):
+    if ctx.author.guild_permissions.administrator:
+        user = discord.utils.get(ctx.guild.members, name=user)
+        if user:
+            await user.edit(nick=None)
+            await ctx.send(f"Removed nickname of {user.mention}")
+        else:
+            await ctx.send(f"User '{user}' does not exist.")
+    else:
+        ctx.reply("You do not have permission to use this command.")
 
 
 @bot.command(help="Delete a specified number of messages in the channel. \nAlways add 1 to the count when using this command as your message counts as a message for the bot to delete.\nThis can only delete up to 100 messages (sadly)")
@@ -1158,11 +1538,11 @@ async def purge(ctx, amount: int):
         await ctx.message.delete()
 
         # Send initial message indicating the start of message deletion
-        progress_message = await ctx.send(f"Deleting messages... 0/{amount-1} messages deleted so far.")
+        progress_message = await ctx.send(f"Deleting messages... 0/{amount} messages deleted so far.")
         
         # Fetch messages to delete
         messages_to_delete = []
-        async for message in ctx.channel.history(limit=amount):
+        async for message in ctx.channel.history(limit=amount + 1):
             if message.id != progress_message.id:
                 messages_to_delete.append(message)
         
@@ -1170,10 +1550,11 @@ async def purge(ctx, amount: int):
         await ctx.channel.delete_messages(messages_to_delete)
 
         # Send final message indicating completion of message deletion
-        await progress_message.edit(content=f"Deleted {len(messages_to_delete)} out of {amount-1} messages. Command ran by: {ctx.author.mention}")
+        await progress_message.edit(content=f"Deleted {len(messages_to_delete)} out of {amount} messages. Command ran by: {ctx.author.mention}")
     else:
         # If the user doesn't have the necessary permissions, reply with an error message
         await ctx.reply("You don't have permission to use this command.")
+
 
 @bot.command(help = "Makes you depressed")
 async def depression(ctx):
@@ -1185,12 +1566,17 @@ async def depression(ctx):
     
     user = str(ctx.author)
     if user == "kefayt_":
+        role2 = discord.utils.get(ctx.guild.roles, name='depressed')
+        if role2 is None:
+            role2 = await ctx.guild.create_role(name='depressed-king', color=discord.Color.dark_gray())
+            await ctx.send(f"Created '{role}' role.")
         await ctx.reply("You can't make a depressed person depressed.")
     
     else:
         await ctx.author.add_roles(role)
         await ctx.reply(f"Role '{role}' added to you!")
-    
+
+
 # Error handling
 @bot.event
 async def on_command_error(ctx, error):
@@ -1206,10 +1592,23 @@ async def on_command_error(ctx, error):
         await ctx.reply("You don't have the necessary permissions to run this command.")
     elif isinstance(error, commands.BotMissingPermissions):
         await ctx.reply("The bot doesn't have the necessary permissions to execute this command.")
+    elif isinstance(error, commands.DisabledCommand):
+        await ctx.reply("This command is currently disabled.")
+    elif isinstance(error, commands.NoPrivateMessage):
+        await ctx.reply("This command cannot be used in private messages.")
+    elif isinstance(error, commands.CheckFailure):
+        await ctx.reply("You do not have permission to use this command.")
+    elif isinstance(error, commands.CommandInvokeError):
+        await ctx.reply("An error occurred while executing the command.")
+        # Log the original exception
+        original_error = getattr(error, "original", error)
+        print.error('An error occurred during command execution:', file=sys.stderr)
+        traceback.print_exception(type(original_error), original_error, original_error.__traceback__, file=sys.stderr)
     else:
         # Log the error to console
-        print('Ignoring exception in command {}:'.format(ctx.command), file=sys.stderr)
+        print.error('Ignoring exception in command {}: {}'.format(ctx.command, error))
         traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr)
+
 
 
 
@@ -1226,6 +1625,7 @@ async def search_command(ctx, command_name: str):
             await ctx.reply(f"The command **{command_name}** is available.")
     else:
         await ctx.reply(f"The command **{command_name}** is not available.")
+
 
 
 
