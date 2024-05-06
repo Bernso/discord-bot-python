@@ -1319,48 +1319,42 @@ async def set_role_log_channel(ctx, channel: discord.TextChannel):
     else:
         await ctx.send("You don't have permission to use this command.")
 
+
 @bot.event
 async def on_guild_emojis_update(guild, before, after):
-    # Check if an emoji was added
-    added_emojis = [emoji for emoji in after if emoji not in before]
+    added_emojis = [emoji for emoji in after if emoji not in before]  # Check added emojis
+    deleted_emojis = [emoji for emoji in before if emoji not in after]  # Check deleted emojis
 
-    # Get the moderator who added the emoji
-    async for entry in guild.audit_logs(limit=1, action=discord.AuditLogAction.emoji_create):
-        moderator = entry.user
-        break  # Only need the latest emoji creation entry
+    # Get the moderator who modified the emojis
+    async for entry in guild.audit_logs(limit=1):
+        if entry.action in [discord.AuditLogAction.emoji_create, discord.AuditLogAction.emoji_delete]:
+            moderator = entry.user
+            break  # Only need the latest emoji modification entry
 
-    # Log emoji creation in a specific channel
+    # Log emoji creation/deletion in a specific channel
     channel_id = 1234100559431077939  # Replace with the ID of your desired channel
     log_channel = bot.get_channel(channel_id)
 
-    if log_channel and added_emojis:
-        embed = discord.Embed(title="Emoji Created", color=discord.Color.green())
-        for emoji in added_emojis:
-            embed.add_field(name="Emoji Name", value=f"{emoji.name}", inline=False)
-        embed.set_footer(text=f"Created by {moderator.mention}")
-        await log_channel.send(embed=embed)
+    if log_channel:
+        if added_emojis:
+            embed = discord.Embed(title="Emoji Created", color=discord.Color.green())
+            
+            for emoji in added_emojis:
+                embed.add_field(name="Emoji Created", value=f"{moderator.mention} created :{emoji.name}:", inline=False)
+                
+            await log_channel.send(embed=embed)
+            
+        if deleted_emojis:
+            embed = discord.Embed(title="Emoji Deleted", color=discord.Color.red())
+            
+            for emoji in deleted_emojis:
+                embed.add_field(name="Emoji Deleted", value=f"{moderator.mention} deleted :{emoji.name}:", inline=False)
+                
+            await log_channel.send(embed=embed)
 
 
-@bot.event
-async def on_voice_state_update(member, before, after):
-    # Check if a new voice channel was created
-    if not before.channel and after.channel:
-        # Check if the created voice channel is a soundboard (you can customize this condition)
-        if "soundboard" in after.channel.name.lower():
-            # Get the moderator who created the voice channel
-            async for entry in after.channel.guild.audit_logs(limit=1, action=discord.AuditLogAction.channel_create):
-                moderator = entry.user
-                break  # Only need the latest channel creation entry
 
-            # Log soundboard creation in a specific channel
-            channel_id = 1234100559431077939  # Replace with the ID of your desired channel
-            log_channel = bot.get_channel(channel_id)
 
-            if log_channel:
-                embed = discord.Embed(title="Soundboard Created", color=discord.Color.green())
-                embed.add_field(name="Soundboard Name", value=f"{after.channel.name}", inline=False)
-                embed.set_footer(text=f"Created by {moderator.mention}")
-                await log_channel.send(embed=embed)
 
     
 
