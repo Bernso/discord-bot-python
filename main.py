@@ -1073,7 +1073,8 @@ async def create_channel(ctx, channel_name: str):
     # Check if the user invoking the command has the necessary permissions
     if ctx.author.guild_permissions.administrator:
         # Create the new channel
-        await ctx.guild.create_text_channel(channel_name)
+        newChan = await ctx.guild.create_text_channel(channel_name)
+        await ctx.reply(f"Channel **{newChan.mention}** has been created.")
         
     else:
         # If the user doesn't have the necessary permissions, reply an error message
