@@ -1099,7 +1099,7 @@ async def delete_channel(ctx, channel: discord.TextChannel):
         await ctx.reply(f"Channel **{channel.mention}** ({channel}) has been deleted.")
     else:
         await ctx.reply("You don't have permission to use this command.")
-    
+
 
 @bot.event
 async def on_message(message: discord.Message) -> None:
@@ -1320,7 +1320,62 @@ async def set_role_log_channel(ctx, channel: discord.TextChannel):
         await ctx.send("You don't have permission to use this command.")
 
 
+@bot.event
+async def on_text_channel_update(before, after):
+    if before.overwrites != after.overwrites:
+        # Determine the permission changes
+        added_overwrites = [overwrite for overwrite in after.overwrites if overwrite not in before.overwrites]
+        removed_overwrites = [overwrite for overwrite in before.overwrites if overwrite not in after.overwrites]
 
+        # Get the moderator who did the modification
+        moderator = after.guild.get_member(after.guild.owner_id)
+
+        # Log permission changes in a specific channel
+        channel_id = 1234100559431077939  # Replace with the ID of your desired channel
+        channel = bot.get_channel(channel_id)
+        if channel:
+            for overwrite in added_overwrites:
+                embed = discord.Embed(title="Permission Changes", color=discord.Color.green())
+                embed.add_field(name="Permission Added", value=f"{moderator.mention} added permission {overwrite[0].mention} for {overwrite[1].mention} in {after.mention}", inline=False)
+                await channel.send(embed=embed)
+
+            for overwrite in removed_overwrites:
+                embed = discord.Embed(title="Permission Changes", color=discord.Color.red())
+                embed.add_field(name="Permission Removed", value=f"{moderator.mention} removed permission {overwrite[0].mention} for {overwrite[1].mention} in {after.mention}", inline=False)
+                await channel.send(embed=embed)
+
+@bot.event
+async def on_guild_channel_create(channel):
+    # Get the moderator who created the channel
+    moderator = channel.guild.get_member(channel.guild.owner_id)
+
+    # Log channel creation in a specific channel
+    channel_id = 1234100559431077939  # Replace with the ID of your desired channel
+    log_channel = bot.get_channel(channel_id)
+    if log_channel:
+        embed = discord.Embed(title="Channel Created", color=discord.Color.green())
+        embed.add_field(name="Channel Name", value=channel.name, inline=False)
+        embed.add_field(name="Channel Type", value=str(channel.type), inline=False)
+        embed.set_footer(text=f"Created by {moderator.mention}")
+        await log_channel.send(embed=embed)
+
+
+@bot.event
+async def on_guild_channel_delete(channel):
+    # Get the moderator who deleted the channel
+    moderator = channel.guild.get_member(channel.guild.owner_id)
+
+    # Log channel deletion in a specific channel
+    channel_id = 1234100559431077939  # Replace with the ID of your desired channel
+    log_channel = bot.get_channel(channel_id)
+    if log_channel:
+        embed = discord.Embed(title="Channel Deleted", color=discord.Color.red())
+        embed.add_field(name="Channel Name", value=channel.name, inline=False)
+        embed.add_field(name="Channel Type", value=str(channel.type), inline=False)
+        embed.set_footer(text=f"Deleted by {moderator.mention}")
+        await log_channel.send(embed=embed)
+
+    
 
 @bot.event
 async def on_member_update(before, after):
