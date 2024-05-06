@@ -1353,6 +1353,37 @@ async def on_guild_emojis_update(guild, before, after):
             await log_channel.send(embed=embed)
 
 
+@bot.event
+async def on_guild_stickers_update(guild, before, after):
+    added_stickers = [sticker for sticker in after if sticker not in before]  # Check added stickers
+    deleted_stickers = [sticker for sticker in before if sticker not in after]  # Check deleted stickers
+
+    # Get the moderator who modified the stickers
+    async for entry in guild.audit_logs(limit=1):
+        if entry.action in [discord.AuditLogAction.sticker_create, discord.AuditLogAction.sticker_delete]:
+            moderator = entry.user
+            break  # Only need the latest sticker modification entry
+
+    # Log sticker creation/deletion in a specific channel
+    channel_id = 1234100559431077939  # Replace with the ID of your desired channel
+    log_channel = bot.get_channel(channel_id)
+
+    if log_channel:
+        if added_stickers:
+            embed = discord.Embed(title="Sticker Created", color=discord.Color.green())
+            
+            for sticker in added_stickers:
+                embed.add_field(name="Sticker Created", value=f"{moderator.mention} created {sticker.name}", inline=False)
+                
+            await log_channel.send(embed=embed)
+            
+        if deleted_stickers:
+            embed = discord.Embed(title="Sticker Deleted", color=discord.Color.red())
+            
+            for sticker in deleted_stickers:
+                embed.add_field(name="Sticker Deleted", value=f"{moderator.mention} deleted {sticker.name}", inline=False)
+                
+            await log_channel.send(embed=embed)
 
 
 
