@@ -1090,6 +1090,17 @@ async def create_channel(ctx, channel_name: str, channel_type: str):
         await ctx.reply("You don't have permission to use this command.")
 
 
+@bot.command(name='delete-channel', help='Deletes a channel')
+async def delete_channel(ctx, channel: discord.TextChannel):
+    # Check if the user invoking the command has the necessary permissions
+    if ctx.author.guild_permissions.administrator:
+        # Delete the channel
+        await channel.delete()
+        await ctx.reply(f"Channel **{channel.mention}** ({channel}) has been deleted.")
+    else:
+        await ctx.reply("You don't have permission to use this command.")
+    
+
 @bot.event
 async def on_message(message: discord.Message) -> None:
     if message.author == bot.user:
