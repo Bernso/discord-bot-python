@@ -1068,17 +1068,27 @@ async def unmute(ctx, member: discord.Member):
         # If the user doesn't have the necessary permissions, reply an error message
         await ctx.reply("You don't have permission to use this command.")
 
-@bot.command(name='create-channel', help='Creates a new channel')
-async def create_channel(ctx, channel_name: str):
+@bot.command(name='create-channel', help='Creates a new channel\nYou can specify the channel type as public (pub) or private (priv).')
+async def create_channel(ctx, channel_name: str, channel_type: str):
     # Check if the user invoking the command has the necessary permissions
     if ctx.author.guild_permissions.administrator:
-        # Create the new channel
-        newChan = await ctx.guild.create_text_channel(channel_name)
-        await ctx.reply(f"Channel **{newChan.mention}** has been created.")
-        
+        # Check if the channel type is valid
+        if channel_type.lower() in ['pub', 'priv']:
+            # Create the new channel based on the channel type
+            if channel_type.lower() == 'pub':
+                new_channel = await ctx.guild.create_text_channel(channel_name)
+            else:
+                new_channel = await ctx.guild.create_text_channel(channel_name, overwrites={ctx.guild.default_role: discord.PermissionOverwrite(read_messages=False)})
+            
+            # Ping the new channel
+            await ctx.reply(f"Channel **{new_channel.mention}** has been created.")
+            
+        else:
+            await ctx.reply("Invalid channel type. Please use 'pub' or 'priv'.")
     else:
-        # If the user doesn't have the necessary permissions, reply an error message
+        # If the user doesn't have the necessary permissions, reply with an error message
         await ctx.reply("You don't have permission to use this command.")
+
 
 @bot.event
 async def on_message(message: discord.Message) -> None:
