@@ -1347,33 +1347,38 @@ async def on_text_channel_update(before, after):
 @bot.event
 async def on_guild_channel_create(channel):
     # Get the moderator who created the channel
-    moderator = channel.guild.get_member(channel.guild.owner_id)
+    async for entry in channel.guild.audit_logs(limit=1, action=discord.AuditLogAction.channel_create):
+        moderator = entry.user
+        break  # Only need the latest channel creation entry
 
     # Log channel creation in a specific channel
     channel_id = 1234100559431077939  # Replace with the ID of your desired channel
     log_channel = bot.get_channel(channel_id)
+    
     if log_channel:
-        embed = discord.Embed(title="Channel Created", color=discord.Color.green())
-        embed.add_field(name="Channel Name", value=channel.name, inline=False)
-        embed.add_field(name="Channel Type", value=str(channel.type), inline=False)
-        embed.set_footer(text=f"Created by {moderator.mention}")
+        embed = discord.Embed(title="Channel Changes", color=discord.Color.green())
+        embed.add_field(name="Channel Created", value=f"{moderator.mention} created channel '{channel.name}'", inline=False)
         await log_channel.send(embed=embed)
 
 
 @bot.event
 async def on_guild_channel_delete(channel):
     # Get the moderator who deleted the channel
-    moderator = channel.guild.get_member(channel.guild.owner_id)
+    async for entry in channel.guild.audit_logs(limit=1, action=discord.AuditLogAction.channel_delete):
+        moderator = entry.user
+        break  # Only need the latest channel deletion entry
 
     # Log channel deletion in a specific channel
     channel_id = 1234100559431077939  # Replace with the ID of your desired channel
     log_channel = bot.get_channel(channel_id)
+    
     if log_channel:
-        embed = discord.Embed(title="Channel Deleted", color=discord.Color.red())
-        embed.add_field(name="Channel Name", value=channel.name, inline=False)
-        embed.add_field(name="Channel Type", value=str(channel.type), inline=False)
-        embed.set_footer(text=f"Deleted by {moderator.mention}")
+        embed = discord.Embed(title="Channel Changes", color=discord.Color.red())
+        embed.add_field(name="Channel Deleted", value=f"{moderator.mention} deleted channel '{channel.name}'", inline=False)
         await log_channel.send(embed=embed)
+
+
+
 
     
 
