@@ -1047,7 +1047,7 @@ async def mute(ctx, member: discord.Member, duration: int):
 @bot.command(help="Unmute a user")
 async def unmute(ctx, member: discord.Member):
     # Check if the user invoking the command has the necessary permissions
-    if ctx.author.guild_permissions.manage_roles:
+    if ctx.author.guild_permissions.administrator:
         # Get the muted role from the server
         muted_role = discord.utils.get(ctx.guild.roles, name="Muted")
 
@@ -1068,6 +1068,16 @@ async def unmute(ctx, member: discord.Member):
         # If the user doesn't have the necessary permissions, reply an error message
         await ctx.reply("You don't have permission to use this command.")
 
+@bot.command(name='create-channel', help='Creates a new channel')
+async def create_channel(ctx, channel_name: str):
+    # Check if the user invoking the command has the necessary permissions
+    if ctx.author.guild_permissions.administrator:
+        # Create the new channel
+        await ctx.guild.create_text_channel(channel_name)
+        
+    else:
+        # If the user doesn't have the necessary permissions, reply an error message
+        await ctx.reply("You don't have permission to use this command.")
 
 @bot.event
 async def on_message(message: discord.Message) -> None:
