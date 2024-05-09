@@ -6,4 +6,4 @@ build
 .vsconfig
 .pytest_cache
 __pycache__
-.venv
+/.venv/

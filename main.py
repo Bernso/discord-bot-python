@@ -892,14 +892,63 @@ async def on_member_join(member):
     # Get the log channel
     log_channel = bot.get_channel(BOT_LOG_CHANNEL_ID)
     general_chat = bot.get_channel(1225352074955591713)
-    member.add_roles(discord.utils.get(member.guild.roles, name="Unverified"))
+    
+    # Get the role object using the role ID
+    role_id = 1234090964549767212
+    role = member.guild.get_role(role_id)
+    
+    # Add the role to the member
+    if role:
+        await member.add_roles(role)
+    else:
+        print("Role not found.")
+
+    # Database setup
+    cur.execute(f'''CREATE TABLE IF NOT EXISTS GUILD_{member.guild.id} (user_id int NOT NULL, exp int DEFAULT 0, lvl int DEFAULT 0) ''')
+
+    # Add all existing members to the database if not already present
+    for x in member.guild.members:
+        if not x.bot:
+            cur.execute(f"INSERT INTO GUILD_{member.guild.id} (user_id) VALUES ({x.id})")
+
+    con.commit()
+
     if log_channel:
         # Create an embedded message for member join event
         embed = discord.Embed(title="Member Joined", description=f"{member.mention} has joined the server! \nWelcome!", color=discord.Color.green())
         await log_channel.send(embed=embed)
         await general_chat.send(embed=embed)
     else:
-        general_chat.send(f"Cannot find {log_channel}")
+        print("Log channel not found.")
+
+
+
+@bot.command()
+async def test(ctx):
+    if ctx.author.guild_permissions.administrator:
+        # Get the log channel
+        log_channel = bot.get_channel(BOT_LOG_CHANNEL_ID)
+        general_chat = bot.get_channel(1225352074955591713)
+        
+        # Get the role object using the role ID
+        role_id = 1234090964549767212
+        role = ctx.author.guild.get_role(role_id)
+        
+        # Add the role to the member
+        if role:
+            await ctx.author.add_roles(role)
+        else:
+            print("Role not found.")
+
+        if log_channel:
+            # Create an embedded message for member join event
+            embed = discord.Embed(title="Member Joined", description=f"{ctx.author.mention} has joined the server! \nWelcome!", color=discord.Color.green())
+            await log_channel.send(embed=embed)
+            await general_chat.send(embed=embed)
+        else:
+            print("Log channel not found.")
+    else:
+        ctx.reply("You do not have permission to use test commands.")
 
 
 # Event for when a member leaves the server
