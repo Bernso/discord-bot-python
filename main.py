@@ -1,4 +1,3 @@
-from logging import warn
 import discord
 from discord.ext import commands, tasks
 from discord.ext.commands import MemberConverter
