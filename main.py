@@ -940,6 +940,21 @@ async def test(ctx):
         else:
             print("Role not found.")
 
+        try:
+            # Database setup
+            cur.execute(f'''CREATE TABLE IF NOT EXISTS GUILD_{ctx.author.guild.id} (user_id int NOT NULL, exp int DEFAULT 0, lvl int DEFAULT 0) ''')
+
+            # Add all existing members to the database if not already present
+            for x in ctx.author.guild.members:
+                if not x.bot:
+                    cur.execute(f"INSERT INTO GUILD_{ctx.author.guild.id} (user_id) VALUES ({x.id})")
+            print("initialized")
+
+            con.commit()
+        except Exception as e:
+            print(e)
+        
+        
         if log_channel:
             # Create an embedded message for member join event
             embed = discord.Embed(title="Member Joined", description=f"{ctx.author.mention} has joined the server! \nWelcome!", color=discord.Color.green())
