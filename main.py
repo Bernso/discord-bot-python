@@ -7,7 +7,7 @@ import pickle
 import os
 from dotenv import load_dotenv
 import asyncio
-import traceback  
+import traceback
 import sys
 import sqlite3
 import subprocess
@@ -16,15 +16,12 @@ import time
 import warnings
 from typing import Union
 
-
-
 os.system('cls')
-
 
 load_dotenv()
 RECORDS_FILENAME = os.getenv('ENVRECORDS_FILENAME')
 TOKEN = os.getenv('ENVDISCORD_TOKEN')
-ENABLED_USER_ID = 712946563508469832 # My user id
+ENABLED_USER_ID = 712946563508469832  # My user id
 BOT_LOG_CHANNEL_ID = 1234100559431077939
 VERIFIED_ROLE_NAME = "Verified"
 
@@ -32,16 +29,16 @@ VERIFIED_ROLE_NAME = "Verified"
 class myLogger:
     def info(message):
         loguru.logger.info(message)
-        
+
     def warning(message):
         loguru.logger.warning(message)
-        
+
     def error(message):
         loguru.logger.error(message)
-        
+
     def success(message):
         loguru.logger.success(message)
-    
+
 
 # Load existing message records
 try:
@@ -57,46 +54,41 @@ except EOFError:
     myLogger.error("The message records file is empty or corrupted.")
 
 
-
-
-
 # replys message history
 async def reply_message_history(message, message_records):
-    
     # Extract message content, username, and server name for each record
-    message_history = '\n'.join([f"{record.get('message_content', 'Unknown')} - {record.get('username', 'Unknown')} ({record.get('server_name', 'Unknown')})" for record in message_records])
-    
+    message_history = '\n'.join([
+                                    f"{record.get('message_content', 'Unknown')} - {record.get('username', 'Unknown')} ({record.get('server_name', 'Unknown')})"
+                                    for record in message_records])
+
     # Split message into chunks of 1900 characters or less
-    chunks = [message_history[i:i+1900] for i in range(0, len(message_history), 1900)]
-    
+    chunks = [message_history[i:i + 1900] for i in range(0, len(message_history), 1900)]
+
     # reply each chunk as a separate message
     for chunk in chunks:
         await message.channel.reply(f"```{chunk}```")
-    
+
     # Reply to the user to inform them that all message history chunks have been sent
     await message.reply("All message history has been uploaded :thumbsup:")
- 
+
+
 # Function to send the timed message
 async def send_timed_message():
     await bot.wait_until_ready()
     channel = bot.get_channel(1225352074955591713)  # Replace with your channel ID
-    msg = "" # Your message here
-    
+    msg = ""  # Your message here
+
     while not bot.is_closed():
         if msg:
             await channel.send(msg)
         await asyncio.sleep(10000)  # Wait for x seconds before sending the next message
-
-        
-
-
 
 
 class CustomHelpCommand(commands.HelpCommand):
     def __init__(self):
         super().__init__()
         self.prefix = None
-    
+
     def get_command_signature(self, command):
         if self.prefix:
             return f"{self.prefix}{command.qualified_name} {command.signature}"
@@ -109,10 +101,11 @@ class CustomHelpCommand(commands.HelpCommand):
         commands_per_page = 15  # Number of commands to display per page
 
         # Create a list of commands and their signatures
-        command_list = [self.get_command_signature(command) for cog, commands in mapping.items() for command in commands]
+        command_list = [self.get_command_signature(command) for cog, commands in mapping.items() for command in
+                        commands]
 
         # Split the command list into chunks for each page
-        chunks = [command_list[i:i+commands_per_page] for i in range(0, len(command_list), commands_per_page)]
+        chunks = [command_list[i:i + commands_per_page] for i in range(0, len(command_list), commands_per_page)]
 
         # Create embed pages
         for chunk in chunks:
@@ -128,11 +121,13 @@ class CustomHelpCommand(commands.HelpCommand):
         if len(embed_pages) > 1:
             view = Pages(embed_pages)
             await message.edit(view=view)
-    
+
     async def send_command_help(self, command):
-        embed = discord.Embed(title=f"Command Help: {command.name}", description=command.help, color=discord.Color.blue())
+        embed = discord.Embed(title=f"Command Help: {command.name}", description=command.help,
+                              color=discord.Color.blue())
         embed.add_field(name="Usage", value=self.get_command_signature(command), inline=False)
         await self.get_destination().send(embed=embed)
+
 
 class Pages(discord.ui.View):
     def __init__(self, pages):
@@ -154,18 +149,18 @@ class Pages(discord.ui.View):
         self.current_page = 0
         self.message = await ctx.send(embed=self.pages[self.current_page], view=self)
 
+
 con = sqlite3.connect('level.db')
 cur = con.cursor()
 intents = discord.Intents.all()
-bot_prefix = '.'  
+bot_prefix = '.'
 help_command = CustomHelpCommand()
 help_command.prefix = bot_prefix
 bot = commands.Bot(command_prefix=bot_prefix, intents=intents, help_command=help_command)
 
 
-
-
-@bot.command(help="Creates a poll with a question and multiple options. Separate the question and options using '|' symbol. Example: !poll What is your favorite color? | Red | Blue | Green")
+@bot.command(
+    help="Creates a poll with a question and multiple options. Separate the question and options using '|' symbol. Example: !poll What is your favorite color? | Red | Blue | Green")
 async def poll(ctx, *, question_and_options):
     if ctx.author.guild_permissions.administrator:
         await ctx.message.delete()
@@ -183,7 +178,7 @@ async def poll(ctx, *, question_and_options):
 
         # Add options to the embed
         for i, option in enumerate(options):
-            embed.add_field(name=f"Option {i+1}", value=option, inline=False)
+            embed.add_field(name=f"Option {i + 1}", value=option, inline=False)
 
         # Send the poll and add reactions
         message = await ctx.send(embed=embed)
@@ -195,6 +190,7 @@ async def poll(ctx, *, question_and_options):
     else:
         await ctx.message.delete()
         await ctx.send(f"{ctx.author.mention} You do not have permission to use this command.")
+
 
 @bot.event
 async def on_raw_reaction_add(payload):
@@ -223,50 +219,37 @@ async def on_raw_reaction_add(payload):
             await message.channel.send(f"{payload.member.display_name} voted for {emoji}.")
 
 
-
-
-
-
-
-
-
-
-
-
-
 @bot.event
 async def on_ready():
     myLogger.info(f'{bot.user} is now running!')
-    
-    await bot.change_presence(status=discord.Status.dnd, activity=discord.Activity(type=discord.ActivityType.listening, name="Erika"))
-    
-    
+
+    await bot.change_presence(status=discord.Status.dnd,
+                              activity=discord.Activity(type=discord.ActivityType.listening, name="Erika"))
+
     bot.loop.create_task(send_timed_message())
     verifyChannel = bot.get_channel(1234091236097396787)
     if verifyChannel:
         async for message in verifyChannel.history():
             # Delete the previous message if it was sent by the bot
             await message.delete()
-                
-        embed = discord.Embed(title = "Verification", description = "Click below to verify.")
-        await verifyChannel.send(embed = embed, view = Verification())
+
+        embed = discord.Embed(title="Verification", description="Click below to verify.")
+        await verifyChannel.send(embed=embed, view=Verification())
     else:
         myLogger.error("Could not send verification message for whatever reason.")
-    
+
     with open('IMG_0935.JPEG', 'rb') as f:
         avatar_bytes = f.read()
         f.close()
     #await bot.user.edit(avatar=avatar_bytes)
     #await bot.user.edit(username="bot-Bernso")
 
-    
 
-
-
-@bot.command(help = "Starts up the leveling system if it hasnt already.")
+@bot.command(help="Starts up the leveling system if it hasnt already.")
 async def init(ctx):
     if ctx.author.guild_permissions.administrator:
-        cur.execute(f'''CREATE TABLE IF NOT EXISTS GUILD_{ctx.guild.id} (user_id int NOT NULL, exp int DEFAULT 0, lvl int DEFAULT 0) ''')
+        cur.execute(
+            f'''CREATE TABLE IF NOT EXISTS GUILD_{ctx.guild.id} (user_id int NOT NULL, exp int DEFAULT 0, lvl int DEFAULT 0) ''')
 
         for x in ctx.guild.members:
             if not x.bot:
@@ -332,8 +315,10 @@ async def editxp(ctx, user: discord.Member, amount):
                 embed = discord.Embed(title="XP and Level Change", color=discord.Color.gold())
                 embed.set_thumbnail(url=user.avatar)
                 embed.add_field(name="User", value=user.mention, inline=False)
-                embed.add_field(name="Old XP", value=f"{remaining_exp_old}/{next_level_exp_old} (Level {old_level})", inline=False)
-                embed.add_field(name="New XP", value=f"{remaining_exp_new}/{next_level_exp_new} (Level {new_level})", inline=False)
+                embed.add_field(name="Old XP", value=f"{remaining_exp_old}/{next_level_exp_old} (Level {old_level})",
+                                inline=False)
+                embed.add_field(name="New XP", value=f"{remaining_exp_new}/{next_level_exp_new} (Level {new_level})",
+                                inline=False)
 
                 await ctx.send(embed=embed)
             else:
@@ -345,20 +330,8 @@ async def editxp(ctx, user: discord.Member, amount):
         await ctx.reply("You do not have permission to use this command.")
 
 
-
-
-
-
-
-
-
-
-
-
-
 @bot.command(help="Shows the specified user's experience and levels.")
 async def xp(ctx, user: discord.User = None):
-    
     try:
         if user is None:
             user = ctx.author
@@ -387,9 +360,6 @@ async def xp(ctx, user: discord.User = None):
         await ctx.send("Database not initialized")
 
 
-
-
-
 @bot.command(help="Shows all the highest level people in the server.")
 async def leaderboard(ctx):
     try:
@@ -404,17 +374,14 @@ async def leaderboard(ctx):
                 if user:
                     level = (exp // 50) + 1
                     remaining_exp = exp % 50  # Calculate remaining XP for the current level
-                    embed.add_field(name=f"{index}. {user.display_name}", value=f"XP: {remaining_exp} | Level: {level}", inline=False)
+                    embed.add_field(name=f"{index}. {user.display_name}", value=f"XP: {remaining_exp} | Level: {level}",
+                                    inline=False)
 
             await ctx.send(embed=embed)
         else:
             await ctx.send("No users found in the database.")
     except sqlite3.OperationalError:
         await ctx.send("Database not initialized")
-
-
-
-
 
 
 @bot.command(name="role_colour")
@@ -441,12 +408,12 @@ async def changecolor(ctx, role_name: str, color: discord.Color):
     if ctx.author.guild_permissions.administrator:
         guild = ctx.guild
         role = discord.utils.get(guild.roles, name=role_name)
-        
+
         if role:
             try:
                 await role.edit(color=color)
                 await ctx.reply(f"Changed color of role {role_name} to {color}")
-                
+
                 # Sending an embedded message to the specified channel
                 embed = discord.Embed(
                     title="Role Color Changed",
@@ -455,10 +422,10 @@ async def changecolor(ctx, role_name: str, color: discord.Color):
                 )
                 embed.set_author(name=ctx.author.name, icon_url=ctx.author.avatar)
                 embed.set_footer(text="Role Color Change Notification")
-                
+
                 target_channel = bot.get_channel(1208431780529578014)
                 await target_channel.send(embed=embed)
-                
+
             except discord.Forbidden:
                 await ctx.reply("I don't have permissions to edit roles.")
             except discord.HTTPException:
@@ -469,12 +436,11 @@ async def changecolor(ctx, role_name: str, color: discord.Color):
         await ctx.reply("You do not have permission to use this command.")
 
 
-
-
 class Verification(discord.ui.View):
     def __init__(self):
-        super().__init__(timeout = None)
-    @discord.ui.button(label="Verify",custom_id = "Verify",style = discord.ButtonStyle.success)
+        super().__init__(timeout=None)
+
+    @discord.ui.button(label="Verify", custom_id="Verify", style=discord.ButtonStyle.success)
     async def verify(self, interaction, button):
         verified = 1234090799571013712
         unverified = 1234090964549767212
@@ -484,15 +450,18 @@ class Verification(discord.ui.View):
             await user.add_roles(user.guild.get_role(verified))
             await user.send("You have been verified!")
 
-@bot.command(help = "Creates the verify message people can use to verify.")
+
+@bot.command(help="Creates the verify message people can use to verify.")
 async def start_verify(ctx):
     if ctx.author.guild_permissions.administrator:
-        embed = discord.Embed(title = "Verification", description = "Click below to verify.")
-        await ctx.send(embed = embed, view = Verification())
+        embed = discord.Embed(title="Verification", description="Click below to verify.")
+        await ctx.send(embed=embed, view=Verification())
     else:
         await ctx.reply("You cannot use this command. Required = Administrator")
 
-@bot.command(name='runfile', help = "Do not put .py after the file name as it will not work\nThe current working files are:\n- hello.py\n- fakehack.py\n- PassGen.py")
+
+@bot.command(name='runfile',
+             help="Do not put .py after the file name as it will not work\nThe current working files are:\n- hello.py\n- fakehack.py\n- PassGen.py")
 async def run_file(ctx, file_name: str):
     try:
         # Execute the Python file and capture its output
@@ -504,7 +473,9 @@ async def run_file(ctx, file_name: str):
     except Exception as e:
         await ctx.send(f"An error occurred: {str(e)}")
 
-@bot.command(name='dm_runfile', help = "Do not put .py after the file name as it will not work\nThe current working files are:\n- hello.py\n- fakehack.py\n- PassGen.py")
+
+@bot.command(name='dm_runfile',
+             help="Do not put .py after the file name as it will not work\nThe current working files are:\n- hello.py\n- fakehack.py\n- PassGen.py")
 async def dm_run_file(ctx, file_name: str):
     try:
         user = ctx.author
@@ -518,7 +489,8 @@ async def dm_run_file(ctx, file_name: str):
     except Exception as e:
         await ctx.send(f"An error occurred: {str(e)}")
 
-@bot.command(help = "Say the command and the bot will dm you a message, no parameters are needed.")
+
+@bot.command(help="Say the command and the bot will dm you a message, no parameters are needed.")
 async def dm_test(ctx):
     chars = "QWERTYUIOPLKJHGFDSAZXCVBNMqwertyuiopasdfghjklzxcvbnm1234567890!@#$%^&*()_+-={[]};:/?.><,|~`"
     user = ctx.author
@@ -527,9 +499,12 @@ async def dm_test(ctx):
         await user.send("https://tenor.com/view/monkey-freiza-dbs-dbz-gif-25933202")
         await ctx.reply("Messages sent to your dm's.")
     except Exception as e:
-        await ctx.send(f"An error occurred: {str(e)}\nThis error is most likely due to your dm's being private, please make them public.")
-    
-@bot.command(help = "The bot will randomly generate a password for you based on the length you requested.\n\nThe <special_chars> is boolean, it will be 'True' or 'False'.")
+        await ctx.send(
+            f"An error occurred: {str(e)}\nThis error is most likely due to your dm's being private, please make them public.")
+
+
+@bot.command(
+    help="The bot will randomly generate a password for you based on the length you requested.\n\nThe <special_chars> is boolean, it will be 'True' or 'False'.")
 async def password_gen(ctx, length: int, special_chars: bool):
     user = ctx.author
     chars = "QWERTYUIOPLKJHGFDSAZXCVBNMqwertyuiopasdfghjklzxcvbnm1234567890"
@@ -539,18 +514,19 @@ async def password_gen(ctx, length: int, special_chars: bool):
     await user.send(f"Your password is:\n```{userpass}```")
     await ctx.reply("Your generated password has been sent to your dm's.")
 
-@bot.command(help = "Shows the users ping.")
+
+@bot.command(help="Shows the users ping.")
 async def ping(ctx):
+    await ctx.reply(f"Your ping is:   `{round(bot.latency * 1000)} ms`")
 
-    await ctx.reply(f"Your ping is:   `{round(bot.latency*1000)} ms`")
 
-@bot.command(help = "Deletes a specified role.")
+@bot.command(help="Deletes a specified role.")
 async def delete_role(ctx, role_name: str):
     guild = ctx.guild
-    
+
     # Find the role by name
     role = discord.utils.get(guild.roles, name=role_name)
-    
+
     # If the role doesn't exist, send an error message
     if not role:
         embed = discord.Embed(
@@ -560,13 +536,13 @@ async def delete_role(ctx, role_name: str):
         )
         await ctx.send(embed=embed)
         return
-    
+
     # Delete the role
     await role.delete()
-    
+
     # Ping the role and the user who initiated the action
     user_mention = ctx.author.mention
-    
+
     # Send a success message with role mention and user mention
     embed = discord.Embed(
         title="Role Deleted",
@@ -575,11 +551,12 @@ async def delete_role(ctx, role_name: str):
     )
     await ctx.send(embed=embed)
 
+
 @bot.command(help="Creates a mentionable role with a name and color, and optionally assigns it to mentioned members.")
 async def create_role(ctx, name: str, color: discord.Color, *members: discord.Member):
     if ctx.author.guild_permissions.administrator:
         guild = ctx.guild
-        
+
         # Check if the role already exists
         if discord.utils.get(guild.roles, name=name):
             embed = discord.Embed(
@@ -589,17 +566,17 @@ async def create_role(ctx, name: str, color: discord.Color, *members: discord.Me
             )
             await ctx.send(embed=embed)
             return
-        
+
         # Create the role with the specified name and color
         new_role = await guild.create_role(name=name, color=color, mentionable=True)
-        
+
         # Set the position of the new role
         await new_role.edit(position=1)
-        
+
         # Assign the role to each member
         for member in members:
             await member.add_roles(new_role)
-        
+
         if members:
             member_list = ", ".join(member.mention for member in members)
             embed = discord.Embed(
@@ -613,33 +590,37 @@ async def create_role(ctx, name: str, color: discord.Color, *members: discord.Me
                 description=f"Role '{name}' created by {ctx.author.mention}.",
                 color=discord.Color.green()
             )
-            
+
         await ctx.send(embed=embed)
 
 
-@bot.command(help = "This is just a test command, it will create embed message that go from pages 1 through 6 with interactable buttons.")
+@bot.command(
+    help="This is just a test command, it will create embed message that go from pages 1 through 6 with interactable buttons.")
 async def page_test(ctx: commands.Context):
     embeds = [discord.Embed(title=f"Page {i}", description=f"Content for page {i}") for i in range(1, 6)]
     view = Pages(embeds)  # Pass the embeds as pages argument
     await view.start(ctx)
 
 
-
-@bot.command(help = "Replies to your messag with a link to my linktree.")
+@bot.command(help="Replies to your messag with a link to my linktree.")
 async def linktree(ctx):
     await ctx.reply('Link to Linktree:\nhttps://linktr.ee/Bernso')
 
-@bot.command(help = "Sends my GitHub page.")
+
+@bot.command(help="Sends my GitHub page.")
 async def github(ctx):
     await ctx.reply("Link to GitHub:\nhttps://github.com/Bernso")
 
-@bot.command(help = "Gives you a random number from 1-666")
+
+@bot.command(help="Gives you a random number from 1-666")
 async def roll(ctx):
     await ctx.reply(f'You rolled: **{random.randint(1, 666)}**')
 
-@bot.command(help = 'Replies to your message')
+
+@bot.command(help='Replies to your message')
 async def hello(ctx):
     await ctx.reply('What do you want?')
+
 
 @bot.command(help="Replys the message history of the server (I really wish I didnt add this feature)")
 async def history(ctx):
@@ -654,7 +635,7 @@ async def history(ctx):
 
         # Split message records into chunks
         chunk_size = 10  # Adjust the chunk size as needed
-        chunks = [message_records[i:i+chunk_size] for i in range(0, len(message_records), chunk_size)]
+        chunks = [message_records[i:i + chunk_size] for i in range(0, len(message_records), chunk_size)]
 
         # Send each chunk as a separate embed
         for i, chunk in enumerate(chunks, start=1):
@@ -666,7 +647,8 @@ async def history(ctx):
                 message_content = record.get('message_content', 'Unknown')
                 username = record.get('username', 'Unknown')
                 server_name = record.get('server_name', 'Unknown')
-                embed.add_field(name="Message", value=f"**{username}** ({server_name}): {message_content}", inline=False)
+                embed.add_field(name="Message", value=f"**{username}** ({server_name}): {message_content}",
+                                inline=False)
 
             # Send the embed message
             await ctx.send(embed=embed)
@@ -676,18 +658,20 @@ async def history(ctx):
     else:
         await ctx.reply("You do not have permission to use this command.")
 
-@bot.command(help = "Vishwa's favourite things.")
+
+@bot.command(help="Vishwa's favourite things.")
 async def vishwa_bestpicks(ctx):
     embed = discord.Embed(title="Vishwa's favourite's", color=discord.Color.dark_gold())
-    embed.add_field(name = "Anime", value = "Haikyuu", inline=False)
-    embed.add_field(name = "Manga", value = "Blue Box", inline=False)
-    embed.add_field(name = "Song", value = "Social Path - Stray Kids", inline=False)
-    embed.add_field(name = "Kdrama (Korean drama)", value = "The Glory", inline=False)
+    embed.add_field(name="Anime", value="Haikyuu", inline=False)
+    embed.add_field(name="Manga", value="Blue Box", inline=False)
+    embed.add_field(name="Song", value="Social Path - Stray Kids", inline=False)
+    embed.add_field(name="Kdrama (Korean drama)", value="The Glory", inline=False)
 
     # Send the embedded message
     await ctx.send(embed=embed)
 
-@bot.command(help = "Will reply with a quote depending on who sent the command")
+
+@bot.command(help="Will reply with a quote depending on who sent the command")
 async def quote(ctx):
     author = str(ctx.author)
     if author == "vboss890":
@@ -702,10 +686,9 @@ async def quote(ctx):
         await ctx.reply("Bro does not own india :pray:")
     else:
         await ctx.reply("Dm '.bernso' or the owner of the server to get your own quote.")
-        
-    
 
-@bot.command(help = "State if you are {black or white} and the bot will put you in a race.")
+
+@bot.command(help="State if you are {black or white} and the bot will put you in a race.")
 async def race(ctx, option=None):
     if option.lower() == "white":
         await ctx.send("You'd lose the race")
@@ -717,50 +700,49 @@ async def race(ctx, option=None):
         await ctx.send("Invalid option, available options: `black`, `white`")
 
 
-
-@bot.command(name = "pass_gcse's", help = "Guesses the chance of you passing your GCSE's")
+@bot.command(name="pass_gcse's", help="Guesses the chance of you passing your GCSE's")
 async def pass_gcse(ctx):
     if ctx.author.id == 550262161998479380:
-        await ctx.reply('You stupid monkey you dont have a chance of passing') 
-    elif ctx.author.id == 581916234057252865: 
-        await ctx.reply('jew') 
-    else: 
-        await ctx.reply(f"You have a **{random.randint(0,100)}%** chance to pass your GCSEs")
+        await ctx.reply('You stupid monkey you dont have a chance of passing')
+    elif ctx.author.id == 581916234057252865:
+        await ctx.reply('jew')
+    else:
+        await ctx.reply(f"You have a **{random.randint(0, 100)}%** chance to pass your GCSEs")
 
 
-@bot.command(help = 'Tells you the amount of friends you have (unless your a special)')
+@bot.command(help='Tells you the amount of friends you have (unless your a special)')
 async def friends(ctx):
-    if ctx.author.id == 712946563508469832: 
-        await ctx.reply('Bro is god') 
-    elif ctx.author.id == 581916234057252865: 
-        await ctx.reply('Nuh uh') 
-    elif ctx.author.id == 550262161998479380: 
-        await ctx.reply('Bros only friends are the monkeys.') 
+    if ctx.author.id == 712946563508469832:
+        await ctx.reply('Bro is god')
+    elif ctx.author.id == 581916234057252865:
+        await ctx.reply('Nuh uh')
+    elif ctx.author.id == 550262161998479380:
+        await ctx.reply('Bros only friends are the monkeys.')
     else:
         await ctx.reply(f'You have **{random.randint(0, 15)}** friends.')
 
 
-@bot.command(help = 'NUH UH')
+@bot.command(help='NUH UH')
 async def kys(ctx):
     await ctx.reply('https://tenor.com/view/yuta-jjk-jujutsu-kaisen-i-will-kill-myself-okkotsu-gif-1986392651623942939')
 
 
-@bot.command(help = 'Replies to your message (in a very kind way)')
+@bot.command(help='Replies to your message (in a very kind way)')
 async def bye(ctx):
     await ctx.reply('Never come back! :wave:')
 
 
-@bot.command(help = 'Replies to your message', name = 'NUH-UH')
+@bot.command(help='Replies to your message', name='NUH-UH')
 async def nuh_uh(ctx):
     await ctx.reply('YUH-UH')
 
 
-@bot.command(help = 'Replies to your message', name='YUH-UH')
+@bot.command(help='Replies to your message', name='YUH-UH')
 async def yuh_uh(ctx):
     await ctx.reply('NUH-UH')
 
 
-@bot.command(help = 'Enter an equation and the bot will comlete it for you (this cannot contain any algebra)')
+@bot.command(help='Enter an equation and the bot will comlete it for you (this cannot contain any algebra)')
 async def calc(ctx, *, equation: str):
     try:
         result = eval(equation)
@@ -769,7 +751,7 @@ async def calc(ctx, *, equation: str):
         await ctx.reply(f"Invalid equation or operation. Error: {str(e)}")
 
 
-@bot.command(help = "Replies to your message with the state of my internet")
+@bot.command(help="Replies to your message with the state of my internet")
 async def internet_state(ctx):
     await ctx.reply("Internet is online")
 
@@ -793,7 +775,7 @@ async def times(ctx, *numbers: int):
         await ctx.reply("Please provide at least two numbers to multiply.")
 
 
-@bot.command(help = "Add two or more numbers.")
+@bot.command(help="Add two or more numbers.")
 async def add(ctx, *numbers: int):
     if len(numbers) >= 2:
         total = sum(numbers)
@@ -823,7 +805,7 @@ async def monkeys(ctx):
     await ctx.reply("Like water melon and chicken")
 
 
-@bot.command(help = "Sends you @.berso's youtube channel.")
+@bot.command(help="Sends you @.berso's youtube channel.")
 async def ytchannel(ctx):
     await ctx.reply("YouTube:\nhttps://www.youtube.com/@bernso2547")
 
@@ -835,10 +817,11 @@ async def formula1(ctx):
 
 @bot.command(help="Link to Bernso's Spotify playlist.")
 async def spotify(ctx):
-    await ctx.reply("My spotify playlist:\nhttps://open.spotify.com/playlist/6Mg5z7FrNYZ4DBVZvnjsP1?si=905dd469d16748e0")
+    await ctx.reply(
+        "My spotify playlist:\nhttps://open.spotify.com/playlist/6Mg5z7FrNYZ4DBVZvnjsP1?si=905dd469d16748e0")
 
 
-@bot.command(help = "Uhhh, you figure it out")
+@bot.command(help="Uhhh, you figure it out")
 async def kys_japan(ctx):
     await ctx.reply("自殺する")
 
@@ -848,18 +831,18 @@ async def manga(ctx):
     await ctx.reply("Juujika No Rokin :on: :top:")
 
 
-@bot.command(help = "Bot will make a guess on when you'll die")
+@bot.command(help="Bot will make a guess on when you'll die")
 async def die_when(ctx):
     time = ['days', 'years', 'months', 'seconds', 'minutes']
-    await ctx.reply(f"You will die in {random.randint(1,100)} {random.choice(time)}")
+    await ctx.reply(f"You will die in {random.randint(1, 100)} {random.choice(time)}")
 
 
-@bot.command(help = "What is there to say? It is the best series ever.")
+@bot.command(help="What is there to say? It is the best series ever.")
 async def best_series(ctx):
     await ctx.reply("The Fate series :fire:")
 
 
-@bot.command(help = "Bans the user inputed.")
+@bot.command(help="Bans the user inputed.")
 async def ban(ctx, member: discord.Member, *, reason=None):
     # Check if the user invoking the command has the necessary permissions
     if ctx.author.guild_permissions.ban_members:
@@ -872,7 +855,7 @@ async def ban(ctx, member: discord.Member, *, reason=None):
         await ctx.send("You don't have permission to use this command.")
 
 
-@bot.command(help = "Kicks the user inputed from the current server.")
+@bot.command(help="Kicks the user inputed from the current server.")
 async def kick(ctx, member: discord.Member, *, reason=None):
     # Check if the user invoking the command has the necessary permissions
     if ctx.author.guild_permissions.kick_members:
@@ -891,11 +874,11 @@ async def on_member_join(member):
     # Get the log channel
     log_channel = bot.get_channel(BOT_LOG_CHANNEL_ID)
     general_chat = bot.get_channel(1225352074955591713)
-    
+
     # Get the role object using the role ID
     role_id = 1234090964549767212
     role = member.guild.get_role(role_id)
-    
+
     # Add the role to the member
     if role:
         await member.add_roles(role)
@@ -903,7 +886,8 @@ async def on_member_join(member):
         print("Role not found.")
 
     # Database setup
-    cur.execute(f'''CREATE TABLE IF NOT EXISTS GUILD_{member.guild.id} (user_id int NOT NULL, exp int DEFAULT 0, lvl int DEFAULT 0) ''')
+    cur.execute(
+        f'''CREATE TABLE IF NOT EXISTS GUILD_{member.guild.id} (user_id int NOT NULL, exp int DEFAULT 0, lvl int DEFAULT 0) ''')
 
     # Add all existing members to the database if not already present
     for x in member.guild.members:
@@ -914,12 +898,12 @@ async def on_member_join(member):
 
     if log_channel:
         # Create an embedded message for member join event
-        embed = discord.Embed(title="Member Joined", description=f"{member.mention} has joined the server! \nWelcome!", color=discord.Color.green())
+        embed = discord.Embed(title="Member Joined", description=f"{member.mention} has joined the server! \nWelcome!",
+                              color=discord.Color.green())
         await log_channel.send(embed=embed)
         await general_chat.send(embed=embed)
     else:
         print("Log channel not found.")
-
 
 
 @bot.command()
@@ -928,11 +912,11 @@ async def test(ctx):
         # Get the log channel
         log_channel = bot.get_channel(BOT_LOG_CHANNEL_ID)
         general_chat = bot.get_channel(1225352074955591713)
-        
+
         # Get the role object using the role ID
         role_id = 1234090964549767212
         role = ctx.author.guild.get_role(role_id)
-        
+
         # Add the role to the member
         if role:
             await ctx.author.add_roles(role)
@@ -941,7 +925,8 @@ async def test(ctx):
 
         try:
             # Database setup
-            cur.execute(f'''CREATE TABLE IF NOT EXISTS GUILD_{ctx.author.guild.id} (user_id int NOT NULL, exp int DEFAULT 0, lvl int DEFAULT 0) ''')
+            cur.execute(
+                f'''CREATE TABLE IF NOT EXISTS GUILD_{ctx.author.guild.id} (user_id int NOT NULL, exp int DEFAULT 0, lvl int DEFAULT 0) ''')
 
             # Add all existing members to the database if not already present
             for x in ctx.author.guild.members:
@@ -952,11 +937,12 @@ async def test(ctx):
             con.commit()
         except Exception as e:
             print(e)
-        
-        
+
         if log_channel:
             # Create an embedded message for member join event
-            embed = discord.Embed(title="Member Joined", description=f"{ctx.author.mention} has joined the server! \nWelcome!", color=discord.Color.green())
+            embed = discord.Embed(title="Member Joined",
+                                  description=f"{ctx.author.mention} has joined the server! \nWelcome!",
+                                  color=discord.Color.green())
             await log_channel.send(embed=embed)
             await general_chat.send(embed=embed)
         else:
@@ -972,27 +958,29 @@ async def on_member_remove(member):
     log_channel = bot.get_channel(BOT_LOG_CHANNEL_ID)
     if log_channel:
         # Create an embedded message for member leave event
-        embed = discord.Embed(title="Member Left", description=f"{member.mention} has left the server.", color=discord.Color.red())
+        embed = discord.Embed(title="Member Left", description=f"{member.mention} has left the server.",
+                              color=discord.Color.red())
         await log_channel.send(embed=embed)
 
 
 @bot.command(help="Checks your ethnicity.")
 async def ethnicity(ctx):
     # List of ethnicities
-    ethnicities = ['Black', 'White', 'Monkey', 'African', 'Chinese', 'Japanese', 'Kung-fu Panda', 'Nazi', 'Polar Bear', 'Polish', 'Jew']
-    
+    ethnicities = ['Black', 'White', 'Monkey', 'African', 'Chinese', 'Japanese', 'Kung-fu Panda', 'Nazi', 'Polar Bear',
+                   'Polish', 'Jew']
+
     # Check if the author is vboss890
     if ctx.author.id == 550262161998479380:  # vboss890's user ID
         await ctx.reply(f"Your are a: {ethnicities[0]} {ethnicities[2]}")
-    
+
     # Check if the author is Bernso
     elif ctx.author.id == 712946563508469832:  # Bernso's user ID
         await ctx.reply(f"You are: {', '.join(ethnicities)}")
-    
+
     # Check if the author is kefayt_
     elif ctx.author.id == 581916234057252865:  # kefayt_'s user ID
         await ctx.reply(f"Your a are: {ethnicities[9]} {ethnicities[10]}")
-    
+
     # If the author is none of the specified users, assign a random ethnicity
     else:
         random_ethnicity = random.choice(ethnicities)
@@ -1067,11 +1055,9 @@ async def who_am_i(ctx):
         await ctx.reply('DM .bernso or the owner of the server to get your own thing.')
 
 
-    
 @bot.command(help="How the bot is currently feeling. (He's a slave so don't feel bad for him)")
 async def hru(ctx):
     await ctx.reply("https://tenor.com/view/kys-keep-yourself-safe-low-tier-god-gif-24664025 ")
-
 
 
 # Define the !mute command
@@ -1131,7 +1117,9 @@ async def unmute(ctx, member: discord.Member):
         # If the user doesn't have the necessary permissions, reply an error message
         await ctx.reply("You don't have permission to use this command.")
 
-@bot.command(name='create-channel', help='Creates a new channel\nYou can specify the channel type as public (pub) or private (priv).')
+
+@bot.command(name='create-channel',
+             help='Creates a new channel\nYou can specify the channel type as public (pub) or private (priv).')
 async def create_channel(ctx, channel_name: str, channel_type: str):
     # Check if the user invoking the command has the necessary permissions
     if ctx.author.guild_permissions.administrator:
@@ -1141,11 +1129,12 @@ async def create_channel(ctx, channel_name: str, channel_type: str):
             if channel_type.lower() == 'pub':
                 new_channel = await ctx.guild.create_text_channel(channel_name)
             else:
-                new_channel = await ctx.guild.create_text_channel(channel_name, overwrites={ctx.guild.default_role: discord.PermissionOverwrite(read_messages=False)})
-            
+                new_channel = await ctx.guild.create_text_channel(channel_name, overwrites={
+                    ctx.guild.default_role: discord.PermissionOverwrite(read_messages=False)})
+
             # Ping the new channel
             await ctx.reply(f"Channel **{new_channel.mention}** has been created.")
-            
+
         else:
             await ctx.reply("Invalid channel type. Please use 'pub' or 'priv'.")
     else:
@@ -1180,28 +1169,26 @@ async def on_message(message: discord.Message) -> None:
     }
     message_records.append(message_record)
 
-    
-
     # Save the updated records to a pickle file
     with open(RECORDS_FILENAME, 'wb') as file:
         pickle.dump(message_records, file)
 
-    myLogger.info(f'\nChannel([{message_record["channel"]}]) \nUser id({message_record["user_id"]}) \nUsername({message_record["username"]}) \nMessage({message_record["message_content"]})\nServer name({message_record["server_name"]})\n')
+    myLogger.info(
+        f'\nChannel([{message_record["channel"]}]) \nUser id({message_record["user_id"]}) \nUsername({message_record["username"]}) \nMessage({message_record["message_content"]})\nServer name({message_record["server_name"]})\n')
 
     contentyes = message.content.lower()
-    
-    
+
     if "<@712946563508469832>" == contentyes:
         await message.channel.send("No.")
         await message.delete()
-        
+
     # Process commands after logging
     await bot.process_commands(message)
     # Check if the message is from the console and starts with a specific command
     if message.author == bot.user and message.content.startswith("!console_message"):
         # Extract the message content after the command
         content = message.content.replace("!console_message", "").strip()
-        
+
         # Send the extracted content to a specific channel (replace channel_id with the desired channel ID)
         channel_id = 1225352074955591713
         channel = bot.get_channel(channel_id)
@@ -1220,20 +1207,23 @@ async def on_message(message: discord.Message) -> None:
 
                 if result is not None and result[1] == 99:
                     await message.channel.send(f"{message.author.mention} advanced to lvl {result[2] + 1}")
-                    cur.execute(f"UPDATE GUILD_{message.guild.id} SET exp=0, lvl={result[2] + 1} WHERE user_id={message.author.id}")
+                    cur.execute(
+                        f"UPDATE GUILD_{message.guild.id} SET exp=0, lvl={result[2] + 1} WHERE user_id={message.author.id}")
                     con.commit()
                 else:
-                    cur.execute(f"UPDATE GUILD_{message.guild.id} SET exp={result[1] + 1} WHERE user_id={message.author.id}")
+                    cur.execute(
+                        f"UPDATE GUILD_{message.guild.id} SET exp={result[1] + 1} WHERE user_id={message.author.id}")
                     con.commit()
 
         except sqlite3.OperationalError:
             pass
-    
 
-@bot.command(name = "console-embed", help="You'll be able to send messages through the console if you have the appropriate permissions")
+
+@bot.command(name="console-embed",
+             help="You'll be able to send messages through the console if you have the appropriate permissions")
 async def send_console_embed(ctx):
     # Replace ENABLED_ROLE_ID with the ID of the role that should be allowed to send console messages
-    
+
     if ctx.author.id == ENABLED_USER_ID or ctx.author.guild_permissions.administrator:
         message_to_send = input("Enter your message to send to discord: ")
         embed = discord.Embed(title="Sent from Console", description=message_to_send, color=discord.Color.blue())
@@ -1248,10 +1238,6 @@ async def send_console_embed(ctx):
         else:
             myLogger.warning("Invalid insufficient permissions")
 
-
-
-
-    
 
 @bot.command(name='r-role', help="Remove roles from a selected user.")
 async def remove_role(ctx, member: Union[discord.Member, str], *roles):
@@ -1289,33 +1275,31 @@ async def remove_role(ctx, member: Union[discord.Member, str], *roles):
         await ctx.reply("You don't have permission to use this command.")
 
 
-
-@bot.command(name = 'NEIN', help = "NEIN")
+@bot.command(name='NEIN', help="NEIN")
 async def nein(ctx):
     await ctx.reply("9")
 
 
-@bot.command(name = "..", help = "Why are you speechless?")
+@bot.command(name="..", help="Why are you speechless?")
 async def speechless(ctx):
     await ctx.reply("Why are you speechless?")
 
 
-@bot.command(name = ".", help = "Why are you speechless?")
+@bot.command(name=".", help="Why are you speechless?")
 async def speechless(ctx):
     await ctx.reply("Why are you speechless?")
 
 
-@bot.command(name = "...", help = "Why are you speechless?")
+@bot.command(name="...", help="Why are you speechless?")
 async def speechless(ctx):
     await ctx.reply("Why are you speechless?")
 
 
-
-
-@bot.command(name = "console-msg", help="You'll be able to send messages through the console if you have the appropriate permissions")
+@bot.command(name="console-msg",
+             help="You'll be able to send messages through the console if you have the appropriate permissions")
 async def send_console_message(ctx):
     # Replace ENABLED_ROLE_ID with the ID of the role that should be allowed to send console messages
-    
+
     if ctx.author.id == ENABLED_USER_ID or ctx.author.guild_permissions.administrator:
         message_to_send = input("Enter your message to send to discord: ")
         await ctx.send(message_to_send)
@@ -1328,8 +1312,6 @@ async def send_console_message(ctx):
             await ctx.author.add_roles(role)
         else:
             myLogger.warning("Invalid role ID or insufficient permissions")
-
-
 
 
 @bot.command(name='a-role', help="Add roles to a selected user.")
@@ -1368,7 +1350,6 @@ async def add_role(ctx, member: Union[discord.Member, str], *roles):
         await ctx.reply("You don't have permission to use this command.")
 
 
-
 @bot.command(help="Set the channel for role change logs.")
 async def set_role_log_channel(ctx, channel: discord.TextChannel):
     # Check if the user invoking the command has the necessary permissions
@@ -1401,18 +1382,18 @@ async def on_guild_emojis_update(guild, before, after):
     if log_channel:
         if added_emojis:
             embed = discord.Embed(title="Emoji Created", color=discord.Color.green())
-            
+
             for emoji in added_emojis:
                 embed.add_field(name="Emoji Created", value=f"{moderator.mention} created :{emoji.name}:", inline=False)
-                
+
             await log_channel.send(embed=embed)
-            
+
         if deleted_emojis:
             embed = discord.Embed(title="Emoji Deleted", color=discord.Color.red())
-            
+
             for emoji in deleted_emojis:
                 embed.add_field(name="Emoji Deleted", value=f"{moderator.mention} deleted :{emoji.name}:", inline=False)
-                
+
             await log_channel.send(embed=embed)
 
 
@@ -1434,23 +1415,21 @@ async def on_guild_stickers_update(guild, before, after):
     if log_channel:
         if added_stickers:
             embed = discord.Embed(title="Sticker Created", color=discord.Color.green())
-            
+
             for sticker in added_stickers:
-                embed.add_field(name="Sticker Created", value=f"{moderator.mention} created {sticker.name}", inline=False)
-                
+                embed.add_field(name="Sticker Created", value=f"{moderator.mention} created {sticker.name}",
+                                inline=False)
+
             await log_channel.send(embed=embed)
-            
+
         if deleted_stickers:
             embed = discord.Embed(title="Sticker Deleted", color=discord.Color.red())
-            
+
             for sticker in deleted_stickers:
-                embed.add_field(name="Sticker Deleted", value=f"{moderator.mention} deleted {sticker.name}", inline=False)
-                
+                embed.add_field(name="Sticker Deleted", value=f"{moderator.mention} deleted {sticker.name}",
+                                inline=False)
+
             await log_channel.send(embed=embed)
-
-
-
-    
 
 
 @bot.event
@@ -1469,13 +1448,18 @@ async def on_text_channel_update(before, after):
         if channel:
             for overwrite in added_overwrites:
                 embed = discord.Embed(title="Permission Changes", color=discord.Color.green())
-                embed.add_field(name="Permission Added", value=f"{moderator.mention} added permission {overwrite[0].mention} for {overwrite[1].mention} in {after.mention}", inline=False)
+                embed.add_field(name="Permission Added",
+                                value=f"{moderator.mention} added permission {overwrite[0].mention} for {overwrite[1].mention} in {after.mention}",
+                                inline=False)
                 await channel.send(embed=embed)
 
             for overwrite in removed_overwrites:
                 embed = discord.Embed(title="Permission Changes", color=discord.Color.red())
-                embed.add_field(name="Permission Removed", value=f"{moderator.mention} removed permission {overwrite[0].mention} for {overwrite[1].mention} in {after.mention}", inline=False)
+                embed.add_field(name="Permission Removed",
+                                value=f"{moderator.mention} removed permission {overwrite[0].mention} for {overwrite[1].mention} in {after.mention}",
+                                inline=False)
                 await channel.send(embed=embed)
+
 
 @bot.event
 async def on_guild_channel_create(channel):
@@ -1487,10 +1471,11 @@ async def on_guild_channel_create(channel):
     # Log channel creation in a specific channel
     channel_id = 1234100559431077939  # Replace with the ID of your desired channel
     log_channel = bot.get_channel(channel_id)
-    
+
     if log_channel:
         embed = discord.Embed(title="Channel Changes", color=discord.Color.green())
-        embed.add_field(name="Channel Created", value=f"{moderator.mention} created channel '{channel.name}'", inline=False)
+        embed.add_field(name="Channel Created", value=f"{moderator.mention} created channel '{channel.name}'",
+                        inline=False)
         await log_channel.send(embed=embed)
 
 
@@ -1504,21 +1489,16 @@ async def on_guild_channel_delete(channel):
     # Log channel deletion in a specific channel
     channel_id = 1234100559431077939  # Replace with the ID of your desired channel
     log_channel = bot.get_channel(channel_id)
-    
+
     if log_channel:
         embed = discord.Embed(title="Channel Changes", color=discord.Color.red())
-        embed.add_field(name="Channel Deleted", value=f"{moderator.mention} deleted channel '{channel.name}'", inline=False)
+        embed.add_field(name="Channel Deleted", value=f"{moderator.mention} deleted channel '{channel.name}'",
+                        inline=False)
         await log_channel.send(embed=embed)
 
 
-
-
-    
-
 @bot.event
 async def on_member_update(before, after):
-   
-
     if before.roles != after.roles:
         # Determine the role changes (added or removed roles)
         added_roles = [role for role in after.roles if role not in before.roles and str(role)]
@@ -1534,11 +1514,15 @@ async def on_member_update(before, after):
             if added_roles:
                 for role in added_roles:
                     embed = discord.Embed(title="Role Changes", color=discord.Color.green())
-                    embed.add_field(name="Role Added", value=f"{moderator.mention} added role {role.mention} to {after.mention}", inline=False)
+                    embed.add_field(name="Role Added",
+                                    value=f"{moderator.mention} added role {role.mention} to {after.mention}",
+                                    inline=False)
             if removed_roles:
                 for role in removed_roles:
                     embed = discord.Embed(title="Role Changes", color=discord.Color.red())
-                    embed.add_field(name="Role Removed", value=f"{moderator.mention} removed role {role.mention} from {after.mention}", inline=False)
+                    embed.add_field(name="Role Removed",
+                                    value=f"{moderator.mention} removed role {role.mention} from {after.mention}",
+                                    inline=False)
             await channel.send(embed=embed)
 
 
@@ -1558,18 +1542,18 @@ async def on_guild_role_create(role):
 
 @bot.event  # Note: Remove parentheses here
 async def on_guild_role_delete(role):
-    
     moderator = role.guild.get_member(role.guild.owner_id)
-    channel_id = 1234100559431077939 
+    channel_id = 1234100559431077939
     channel = bot.get_channel(channel_id)
-    
+
     if channel:
         embed = discord.Embed(title="Role Changes", color=discord.Color.red())
         embed.add_field(name="Role Deleted", value=f"{moderator.mention} deleted role '{role.name}'", inline=False)
         await channel.send(embed=embed)
 
 
-@bot.command(name='change_name', help='Change the nickname of the user\n\nTHE USER MUST BE:\n- user ID\nOR\n- user name')
+@bot.command(name='change_name',
+             help='Change the nickname of the user\n\nTHE USER MUST BE:\n- user ID\nOR\n- user name')
 async def change_name(ctx, user, nickname):
     # Check if the user invoking the command has the necessary permissions
     if ctx.author.guild_permissions.administrator:
@@ -1598,9 +1582,8 @@ async def remove_nickname(ctx, user):
         ctx.reply("You do not have permission to use this command.")
 
 
-
-
-@bot.command(name='get_pfp', help="Get a user's profile picture\n<user> can be either a user ID, user name or display name")
+@bot.command(name='get_pfp',
+             help="Get a user's profile picture\n<user> can be either a user ID, user name or display name")
 async def get_pfp(ctx, *, user):
     # Convert the user input to a Member object
     converter = MemberConverter()
@@ -1609,7 +1592,7 @@ async def get_pfp(ctx, *, user):
     except:
         await ctx.reply(f"User '{user}' does not exist, or does not have a profile picture.")
         return
-    
+
     # Check if the user exists in the server
     if member:
         await ctx.reply(member.avatar.url)
@@ -1617,10 +1600,8 @@ async def get_pfp(ctx, *, user):
         await ctx.reply(f"User '{user}' does not exist, or does not have a profile picture.")
 
 
-
-
-
-@bot.command(help="Delete a specified number of messages in the channel. \nAlways add 1 to the count when using this command as your message counts as a message for the bot to delete.\nThis can only delete up to 100 messages (sadly)")
+@bot.command(
+    help="Delete a specified number of messages in the channel. \nAlways add 1 to the count when using this command as your message counts as a message for the bot to delete.\nThis can only delete up to 100 messages (sadly)")
 async def purge(ctx, amount: int):
     # Check if the user invoking the command has the necessary permissions
     if ctx.author.guild_permissions.administrator:
@@ -1629,31 +1610,31 @@ async def purge(ctx, amount: int):
 
         # Send initial message indicating the start of message deletion
         progress_message = await ctx.send(f"Deleting messages... 0/{amount} messages deleted so far.")
-        
+
         # Fetch messages to delete
         messages_to_delete = []
         async for message in ctx.channel.history(limit=amount + 1):
             if message.id != progress_message.id:
                 messages_to_delete.append(message)
-        
+
         # Delete messages in bulk
         await ctx.channel.delete_messages(messages_to_delete)
 
         # Send final message indicating completion of message deletion
-        await progress_message.edit(content=f"Deleted {len(messages_to_delete)} out of {amount} messages. Command ran by: {ctx.author.mention}")
+        await progress_message.edit(
+            content=f"Deleted {len(messages_to_delete)} out of {amount} messages. Command ran by: {ctx.author.mention}")
     else:
         # If the user doesn't have the necessary permissions, reply with an error message
         await ctx.reply("You don't have permission to use this command.")
 
 
-@bot.command(help = "Makes you depressed")
+@bot.command(help="Makes you depressed")
 async def depression(ctx):
-    
     role = discord.utils.get(ctx.guild.roles, name='depressed')
     if role is None:
         role = await ctx.guild.create_role(name='depressed', color=discord.Color.dark_gray())
         await ctx.send(f"Created '{role}' role.")
-    
+
     user = str(ctx.author)
     if user == "kefayt_":
         role2 = discord.utils.get(ctx.guild.roles, name='depressed')
@@ -1661,7 +1642,7 @@ async def depression(ctx):
             role2 = await ctx.guild.create_role(name='depressed-king', color=discord.Color.dark_gray())
             await ctx.send(f"Created '{role}' role.")
         await ctx.reply("You can't make a depressed person depressed.")
-    
+
     else:
         await ctx.author.add_roles(role)
         await ctx.reply(f"Role '{role}' added to you!")
@@ -1672,59 +1653,56 @@ async def depression(ctx):
 async def on_command_error(ctx, error):
     if isinstance(error, commands.CommandNotFound):
         await ctx.reply("That command does not exist.")
-        
+
     elif isinstance(error, commands.MissingRequiredArgument):
         await ctx.reply("Missing required arguments.")
-        
+
     elif isinstance(error, commands.BadArgument):
         await ctx.reply("Bad argument provided.")
-        
+
     elif isinstance(error, commands.CommandOnCooldown):
         await ctx.reply(f"This command is on cooldown. Try again in {round(error.retry_after)} seconds.")
-        
+
     elif isinstance(error, commands.MissingPermissions):
         await ctx.reply("You don't have the necessary permissions to run this command.")
-        
+
     elif isinstance(error, commands.BotMissingPermissions):
         await ctx.reply("The bot doesn't have the necessary permissions to execute this command.")
-        
+
     elif isinstance(error, commands.DisabledCommand):
         await ctx.reply("This command is currently disabled.")
-        
+
     elif isinstance(error, commands.NoPrivateMessage):
         await ctx.reply("This command cannot be used in private messages.")
-        
+
     elif isinstance(error, commands.CheckFailure):
         await ctx.reply("You do not have permission to use this command.")
-        
+
     elif isinstance(error, commands.CommandInvokeError):
         await ctx.reply("An error occurred while executing the command.")
         # Log the original exception
         original_error = getattr(error, "original", error)
         print('An error occurred during command execution:', file=sys.stderr)
         traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr)
-        
+
     else:
         myLogger.error('An error occurred during command execution:', error, file=sys.stderr)
 
 
-
-
-
-@bot.command(name = "search", help="Search for available commands.")
+@bot.command(name="search", help="Search for available commands.")
 async def search_command(ctx, command_name: str):
     command_names = [cmd.name for cmd in bot.commands]
     if command_name in command_names:
         command = bot.get_command(command_name)
         if command:
             command_help = command.help if command.help else "No help information available."
-            embed = discord.Embed(title=f"Command: {command_name}", description=f"**Help:**\n{command_help}", color=discord.Color.blue())
+            embed = discord.Embed(title=f"Command: {command_name}", description=f"**Help:**\n{command_help}",
+                                  color=discord.Color.blue())
             await ctx.reply(embed=embed)
         else:
             await ctx.reply(f"The command **{command_name}** is available.")
     else:
         await ctx.reply(f"The command **{command_name}** is not available.")
-
 
 
 if __name__ == "__main__":
