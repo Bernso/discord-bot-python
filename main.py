@@ -58,8 +58,8 @@ except EOFError:
 async def reply_message_history(message, message_records):
     # Extract message content, username, and server name for each record
     message_history = '\n'.join([
-                                    f"{record.get('message_content', 'Unknown')} - {record.get('username', 'Unknown')} ({record.get('server_name', 'Unknown')})"
-                                    for record in message_records])
+        f"{record.get('message_content', 'Unknown')} - {record.get('username', 'Unknown')} ({record.get('server_name', 'Unknown')})"
+        for record in message_records])
 
     # Split message into chunks of 1900 characters or less
     chunks = [message_history[i:i + 1900] for i in range(0, len(message_history), 1900)]
@@ -360,10 +360,10 @@ async def xp(ctx, user: discord.User = None):
         await ctx.send("Database not initialized")
 
 
-@bot.command(help="Shows all the highest level people in the server.")
+@bot.command(help="Shows the top 5 highest level people in the server.")
 async def leaderboard(ctx):
     try:
-        cur.execute(f"SELECT user_id, MAX(exp) FROM GUILD_{ctx.guild.id} GROUP BY user_id ORDER BY MAX(exp) DESC")
+        cur.execute(f"SELECT user_id, MAX(exp) FROM GUILD_{ctx.guild.id} GROUP BY user_id ORDER BY MAX(exp) DESC LIMIT 5")
         results = cur.fetchall()
 
         if results:
@@ -382,6 +382,9 @@ async def leaderboard(ctx):
             await ctx.send("No users found in the database.")
     except sqlite3.OperationalError:
         await ctx.send("Database not initialized")
+    except Exception as e:
+        myLogger.error(f"An error has occurred: {e}")
+
 
 
 @bot.command(name="role_colour")
@@ -461,7 +464,8 @@ async def start_verify(ctx):
 
 
 @bot.command(name='runfile',
-             help="Do not put .py after the file name as it will not work\nThe current working files are:\n- hello.py\n- fakehack.py\n- PassGen.py")
+             help="Do not put .py after the file name as it will not work\nThe current working files are:\n- "
+                  "hello.py\n- fakehack.py\n- PassGen.py")
 async def run_file(ctx, file_name: str):
     try:
         # Execute the Python file and capture its output
@@ -475,7 +479,8 @@ async def run_file(ctx, file_name: str):
 
 
 @bot.command(name='dm_runfile',
-             help="Do not put .py after the file name as it will not work\nThe current working files are:\n- hello.py\n- fakehack.py\n- PassGen.py")
+             help="Do not put .py after the file name as it will not work\nThe current working files are:\n- "
+                  "hello.py\n- fakehack.py\n- PassGen.py")
 async def dm_run_file(ctx, file_name: str):
     try:
         user = ctx.author
@@ -500,11 +505,14 @@ async def dm_test(ctx):
         await ctx.reply("Messages sent to your dm's.")
     except Exception as e:
         await ctx.send(
-            f"An error occurred: {str(e)}\nThis error is most likely due to your dm's being private, please make them public.")
+            f"An error occurred: {str(e)}\nThis error is most likely due to your dm's being private, please make them "
+            f"public.")
 
 
 @bot.command(
-    help="The bot will randomly generate a password for you based on the length you requested.\n\nThe <special_chars> is boolean, it will be 'True' or 'False'.")
+    help="The bot will randomly generate a password for you based on the length you requested.\n\nThe <special_chars> "
+         "is boolean, it will be 'True' or 'False'.",
+    name='pass-gen')
 async def password_gen(ctx, length: int, special_chars: bool):
     user = ctx.author
     chars = "QWERTYUIOPLKJHGFDSAZXCVBNMqwertyuiopasdfghjklzxcvbnm1234567890"
@@ -595,7 +603,8 @@ async def create_role(ctx, name: str, color: discord.Color, *members: discord.Me
 
 
 @bot.command(
-    help="This is just a test command, it will create embed message that go from pages 1 through 6 with interactable buttons.")
+    help="This is just a test command, it will create embed message that go from pages 1 through 6 with interactable "
+         "buttons.")
 async def page_test(ctx: commands.Context):
     embeds = [discord.Embed(title=f"Page {i}", description=f"Content for page {i}") for i in range(1, 6)]
     view = Pages(embeds)  # Pass the embeds as pages argument
@@ -679,7 +688,7 @@ async def quote(ctx):
     elif author == "kefayt_":
         await ctx.reply('"Wake up with a stinky finger."')
     elif author == ".bernso":
-        await ctx.reply("TBATE > World After The Fall")
+        await ctx.reply("TBATE == World After The Fall")
     elif author == "2314937462561":
         await ctx.reply("Your gay.")
     elif author == "ceo_of_india425":
@@ -694,7 +703,7 @@ async def race(ctx, option=None):
         await ctx.send("You'd lose the race")
     elif option.lower() == 'black':
         await ctx.send("You'd win the race")
-    elif option == None:
+    elif option is None:
         await ctx.send("Invalid option, available options: `black`, `white`")
     else:
         await ctx.send("Invalid option, available options: `black`, `white`")
@@ -842,7 +851,7 @@ async def best_series(ctx):
     await ctx.reply("The Fate series :fire:")
 
 
-@bot.command(help="Bans the user inputed.")
+@bot.command(help="Bans the user inputted.")
 async def ban(ctx, member: discord.Member, *, reason=None):
     # Check if the user invoking the command has the necessary permissions
     if ctx.author.guild_permissions.ban_members:
@@ -855,7 +864,7 @@ async def ban(ctx, member: discord.Member, *, reason=None):
         await ctx.send("You don't have permission to use this command.")
 
 
-@bot.command(help="Kicks the user inputed from the current server.")
+@bot.command(help="Kicks the user inputted from the current server.")
 async def kick(ctx, member: discord.Member, *, reason=None):
     # Check if the user invoking the command has the necessary permissions
     if ctx.author.guild_permissions.kick_members:
@@ -994,7 +1003,7 @@ async def lightnovel(ctx):
 
 @bot.command(help="Recommendation for manhwa.")
 async def manhwa(ctx):
-    await ctx.reply("World After The Fall :on: :top:, any other opinion is invalid")
+    await ctx.reply("World After The Fall")
 
 
 @bot.command(help="Opinion about Vishwa.")
@@ -1050,7 +1059,7 @@ async def who_am_i(ctx):
     elif author == 'y.uka':
         await ctx.reply('You are DA GOAT')
     elif author == 'swayzz1820':
-        await ctx.reply('YOU FINALLY JOINED')
+        await ctx.reply('Italian fascist')
     else:
         await ctx.reply('DM .bernso or the owner of the server to get your own thing.')
 
@@ -1686,7 +1695,7 @@ async def on_command_error(ctx, error):
         traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr)
 
     else:
-        myLogger.error('An error occurred during command execution:', error, file=sys.stderr)
+        myLogger.error(f'An error occurred during command execution: {error}')
 
 
 @bot.command(name="search", help="Search for available commands.")
