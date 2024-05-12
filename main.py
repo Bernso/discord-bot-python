@@ -100,7 +100,7 @@ class CustomHelpCommand(commands.HelpCommand):
             return f"{command.qualified_name} {command.signature}"
 
     async def send_bot_help(self, mapping):
-        commands_per_page = 15
+        commands_per_page = 25
         command_list = [self.get_command_signature(command) for cog, commands in mapping.items() for command in commands]
         chunks = [command_list[i:i + commands_per_page] for i in range(0, len(command_list), commands_per_page)]
 
