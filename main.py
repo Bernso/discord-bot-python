@@ -15,6 +15,8 @@ import loguru
 import time
 import warnings
 from typing import Union
+import datetime
+
 
 os.system('cls')
 
@@ -84,6 +86,8 @@ async def send_timed_message():
         await asyncio.sleep(10000)  # Wait for x seconds before sending the next message
 
 
+
+
 class CustomHelpCommand(commands.HelpCommand):
     def __init__(self):
         super().__init__()
@@ -96,38 +100,26 @@ class CustomHelpCommand(commands.HelpCommand):
             return f"{command.qualified_name} {command.signature}"
 
     async def send_bot_help(self, mapping):
-        embed_pages = []
-        current_page = 1
-        commands_per_page = 15  # Number of commands to display per page
-
-        # Create a list of commands and their signatures
-        command_list = [self.get_command_signature(command) for cog, commands in mapping.items() for command in
-                        commands]
-
-        # Split the command list into chunks for each page
+        commands_per_page = 15
+        command_list = [self.get_command_signature(command) for cog, commands in mapping.items() for command in commands]
         chunks = [command_list[i:i + commands_per_page] for i in range(0, len(command_list), commands_per_page)]
 
-        # Create embed pages
-        for chunk in chunks:
+        embed_pages = []
+        for current_page, chunk in enumerate(chunks, start=1):
             embed = discord.Embed(title=f"Bot Commands (Page {current_page})", color=discord.Color.blue())
             embed.description = "\n".join(chunk)
             embed_pages.append(embed)
-            current_page += 1
 
-        # Send the first page
         message = await self.context.send(embed=embed_pages[0])
 
-        # Add buttons for pagination if there are multiple pages
         if len(embed_pages) > 1:
             view = Pages(embed_pages)
             await message.edit(view=view)
 
     async def send_command_help(self, command):
-        embed = discord.Embed(title=f"Command Help: {command.name}", description=command.help,
-                              color=discord.Color.blue())
+        embed = discord.Embed(title=f"Command Help: {command.name}", description=command.help, color=discord.Color.blue())
         embed.add_field(name="Usage", value=self.get_command_signature(command), inline=False)
         await self.get_destination().send(embed=embed)
-
 
 class Pages(discord.ui.View):
     def __init__(self, pages):
@@ -148,6 +140,8 @@ class Pages(discord.ui.View):
     async def start(self, ctx: commands.Context):
         self.current_page = 0
         self.message = await ctx.send(embed=self.pages[self.current_page], view=self)
+
+
 
 
 con = sqlite3.connect('level.db')
@@ -636,6 +630,163 @@ async def roll(ctx):
 @bot.command(help='Replies to your message')
 async def hello(ctx):
     await ctx.reply('What do you want?')
+
+
+
+# Dictionary to store active giveaways
+giveaways = {}
+
+@bot.command(help="Start a giveaway. Usage: .giveaway <prize> <duration>")
+async def giveaway(ctx, prize, duration):
+    # Generate a unique code for the giveaway
+    giveaway_code = ''.join(random.choices('ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', k=6))
+
+    # Parse duration string to get seconds
+    time_amount, time_unit = duration[:-1], duration[-1]
+    if time_unit == 's':
+        duration_seconds = int(time_amount)
+    elif time_unit == 'm':
+        duration_seconds = int(time_amount) * 60
+    elif time_unit == 'h':
+        duration_seconds = int(time_amount) * 3600
+    elif time_unit == 'd':
+        duration_seconds = int(time_amount) * 86400
+    else:
+        await ctx.send("Invalid duration format. Use 's' for seconds, 'm' for minutes, 'h' for hours, 'd' for days.")
+        return
+
+    # Store the giveaway message ID
+    await ctx.send(f"Giveaway Code: {giveaway_code}")  # Send giveaway code first
+
+    # Create embed for the giveaway
+    embed = discord.Embed(title=f"🎉 Giveaway: {prize}", description=f"React with 🎉 to enter!\nDuration: {duration}", color=0x00ff00)
+    
+    # Calculate end time and round to nearest second
+    end_time = datetime.datetime.utcnow() + datetime.timedelta(seconds=duration_seconds)
+    end_time = end_time.replace(microsecond=0)
+    
+    embed.set_footer(text=f"Giveaway ends at {end_time} UTC")
+    message = await ctx.send(embed=embed)
+    
+    # Add reaction to the message
+    await message.add_reaction("🎉")
+
+    giveaways[giveaway_code] = {
+        'prize': prize,
+        'end_time': end_time,
+        'participants': [],
+        'message_id': message.id  # Storing the message ID here
+    }
+
+    # Start a task to check for the end of the giveaway
+    await end_giveaway(giveaway_code, message)
+
+@bot.command(help="Reroll the winner of a giveaway. Usage: .reroll <giveaway_code>")
+async def reroll(ctx, giveaway_code):
+    if giveaway_code not in giveaways:
+        await ctx.send("This giveaway does not exist.")
+        return
+
+    participants = giveaways[giveaway_code]['participants']
+    
+    # Check if the giveaway has ended
+    if datetime.datetime.utcnow() < giveaways[giveaway_code]['end_time']:
+        # If the giveaway hasn't ended, inform the user
+        await ctx.send("This giveaway is still active. You can only reroll winners after the giveaway has ended.")
+        return
+
+    if not participants:
+        await ctx.send("No participants to reroll.")
+        return
+
+    # Get the winner (user ID)
+    winner_id = random.choice(participants)['user_id']
+    winner_user = await bot.fetch_user(winner_id)
+
+    # Notify the new winner
+    await ctx.send(f"🎉 New winner for {giveaways[giveaway_code]['prize']}: {winner_user.mention}")
+
+    # Remove the previous winner from the participants list
+    participants = [p for p in participants if p['user_id'] != winner_id]
+
+    # Save the new winner in the participants list
+    new_winner = {
+        'user_id': winner_user.id,
+        'confirmation_message_id': None  # Update this if you want to save confirmation message IDs
+    }
+    participants.append(new_winner)
+
+    # Update the participants list in the giveaways dictionary
+    giveaways[giveaway_code]['participants'] = participants
+
+
+
+
+async def end_giveaway(giveaway_code, message):
+    await asyncio.sleep((giveaways[giveaway_code]['end_time'] - datetime.datetime.utcnow()).total_seconds())
+
+    if not message.guild:
+        return
+
+    # Get updated message
+    message = await message.channel.fetch_message(message.id)
+
+    # Get the participants who reacted with 🎉
+    participants = [user async for user in message.reactions[0].users()]
+    participants.remove(bot.user)
+    
+    # Remove the bot's reactions
+    for reaction in message.reactions:
+        if reaction.me:
+            await reaction.remove(bot.user)
+
+    if not participants:
+        await message.channel.send("No one entered the giveaway. Better luck next time!")
+        del giveaways[giveaway_code]
+        return
+
+    winner = random.choice(participants)
+    winner_user = await bot.fetch_user(winner.id)
+
+    # Notify the winner
+    await message.channel.send(f"🎉 Congratulations {winner_user.mention}! You won {giveaways[giveaway_code]['prize']}!")
+
+    # Delete the giveaway message
+    #await message.delete()
+
+    # Delete the giveaway entry confirmation messages
+    for participant in giveaways[giveaway_code]['participants']:
+        try:
+            user = await bot.fetch_user(participant)
+            confirmation_message = await message.channel.fetch_message(giveaways[giveaway_code]['participants'][participant])
+            await confirmation_message.delete()
+        except:
+            pass
+
+    # Remove the giveaway from the dictionary
+    #del giveaways[giveaway_code]
+
+@bot.event
+async def on_reaction_add(reaction, user):
+    if user.bot:
+        return
+
+    for giveaway_code, giveaway_data in giveaways.items():
+        if reaction.message.id == giveaway_data['message_id']:
+            if reaction.emoji == "🎉":
+                if user.id not in giveaway_data['participants']:
+                    giveaway_data['participants'].append(user.id)
+                    confirmation_message = await reaction.message.channel.send(f"{user.mention} has entered the giveaway!")
+                    # Retrieve the confirmation message ID from the dictionary
+                    confirmation_message_id = confirmation_message.id
+                    giveaways[giveaway_code]['participants'].append({user.id: confirmation_message_id})
+                    # Use asyncio.sleep to delay deletion
+                    await asyncio.sleep(1)
+                    # Delete the confirmation message using its ID
+                    await confirmation_message.delete()
+
+
+
 
 
 @bot.command(help="Replys the message history of the server (I really wish I didnt add this feature)")
