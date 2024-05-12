@@ -495,18 +495,20 @@ async def dm_run_file(ctx, file_name: str):
         await ctx.send(f"An error occurred: {str(e)}")
 
 
-@bot.command(help="Say the command and the bot will dm you a message, no parameters are needed.")
-async def dm_test(ctx):
+@bot.command(help="Say the command followed by the number of messages you want the bot to send to your DM. (come in sets of 2)")
+async def dm_test(ctx, num_messages: int):
     chars = "QWERTYUIOPLKJHGFDSAZXCVBNMqwertyuiopasdfghjklzxcvbnm1234567890!@#$%^&*()_+-={[]};:/?.><,|~`"
     user = ctx.author
     try:
-        await user.send("Hello Monkey!")
-        await user.send("https://tenor.com/view/monkey-freiza-dbs-dbz-gif-25933202")
-        await ctx.reply("Messages sent to your dm's.")
+        for _ in range(num_messages):
+            await user.send(f"Hello Monkey! {random.choice(chars)}{random.choice(chars)}{random.choice(chars)}{random.choice(chars)}{random.choice(chars)}{random.choice(chars)}{random.choice(chars)}{random.choice(chars)}{random.choice(chars)}{random.choice(chars)}{random.choice(chars)}{random.choice(chars)}{random.choice(chars)}{random.choice(chars)}{random.choice(chars)}{random.choice(chars)}{random.choice(chars)}{random.choice(chars)}{random.choice(chars)}{random.choice(chars)}{random.choice(chars)}{random.choice(chars)}{random.choice(chars)}{random.choice(chars)}{random.choice(chars)}{random.choice(chars)}{random.choice(chars)}{random.choice(chars)}{random.choice(chars)}{random.choice(chars)}{random.choice(chars)}{random.choice(chars)}{random.choice(chars)}{random.choice(chars)}{random.choice(chars)}{random.choice(chars)}{random.choice(chars)}{random.choice(chars)}{random.choice(chars)}")
+            await user.send("https://tenor.com/view/monkey-freiza-dbs-dbz-gif-25933202")
+        await ctx.reply(f"{num_messages} message(s) sent to your DM.")
     except Exception as e:
         await ctx.send(
-            f"An error occurred: {str(e)}\nThis error is most likely due to your dm's being private, please make them "
-            f"public.")
+            f"An error occurred: {str(e)}\nThis error is most likely due to your DMs being private. "
+            f"Please make them public.")
+
 
 
 @bot.command(
