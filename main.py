@@ -495,15 +495,20 @@ async def dm_run_file(ctx, file_name: str):
         await ctx.send(f"An error occurred: {str(e)}")
 
 
-@bot.command(help="Say the command followed by the number of messages you want the bot to send to your DM. (come in sets of 2)")
+@bot.command(name='dm-test', help="Say the command followed by the number of messages you want the bot to send to your DM.")
 async def dm_test(ctx, num_messages: int):
     chars = "QWERTYUIOPLKJHGFDSAZXCVBNMqwertyuiopasdfghjklzxcvbnm1234567890!@#$%^&*()_+-={[]};:/?.><,|~`"
     user = ctx.author
     try:
-        for _ in range(num_messages):
+        if num_messages == 1:
             await user.send(f"Hello Monkey! {random.choice(chars)}{random.choice(chars)}{random.choice(chars)}{random.choice(chars)}{random.choice(chars)}{random.choice(chars)}{random.choice(chars)}{random.choice(chars)}{random.choice(chars)}{random.choice(chars)}{random.choice(chars)}{random.choice(chars)}{random.choice(chars)}{random.choice(chars)}{random.choice(chars)}{random.choice(chars)}{random.choice(chars)}{random.choice(chars)}{random.choice(chars)}{random.choice(chars)}{random.choice(chars)}{random.choice(chars)}{random.choice(chars)}{random.choice(chars)}{random.choice(chars)}{random.choice(chars)}{random.choice(chars)}{random.choice(chars)}{random.choice(chars)}{random.choice(chars)}{random.choice(chars)}{random.choice(chars)}{random.choice(chars)}{random.choice(chars)}{random.choice(chars)}{random.choice(chars)}{random.choice(chars)}{random.choice(chars)}{random.choice(chars)}")
             await user.send("https://tenor.com/view/monkey-freiza-dbs-dbz-gif-25933202")
-        await ctx.reply(f"{num_messages} message(s) sent to your DM.")
+            await ctx.reply(f"{num_messages} message(s) sent to your DM.")
+        else:
+            for _ in range(num_messages//2):
+                await user.send(f"Hello Monkey! {random.choice(chars)}{random.choice(chars)}{random.choice(chars)}{random.choice(chars)}{random.choice(chars)}{random.choice(chars)}{random.choice(chars)}{random.choice(chars)}{random.choice(chars)}{random.choice(chars)}{random.choice(chars)}{random.choice(chars)}{random.choice(chars)}{random.choice(chars)}{random.choice(chars)}{random.choice(chars)}{random.choice(chars)}{random.choice(chars)}{random.choice(chars)}{random.choice(chars)}{random.choice(chars)}{random.choice(chars)}{random.choice(chars)}{random.choice(chars)}{random.choice(chars)}{random.choice(chars)}{random.choice(chars)}{random.choice(chars)}{random.choice(chars)}{random.choice(chars)}{random.choice(chars)}{random.choice(chars)}{random.choice(chars)}{random.choice(chars)}{random.choice(chars)}{random.choice(chars)}{random.choice(chars)}{random.choice(chars)}{random.choice(chars)}")
+                await user.send("https://tenor.com/view/monkey-freiza-dbs-dbz-gif-25933202")
+            await ctx.reply(f"{num_messages//2} message(s) sent to your DM.")
     except Exception as e:
         await ctx.send(
             f"An error occurred: {str(e)}\nThis error is most likely due to your DMs being private. "
