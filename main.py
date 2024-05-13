@@ -638,48 +638,51 @@ giveaways = {}
 
 @bot.command(help="Start a giveaway. Usage: .giveaway <prize> <duration>")
 async def giveaway(ctx, prize, duration):
-    # Generate a unique code for the giveaway
-    giveaway_code = ''.join(random.choices('ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', k=6))
+    if ctx.user.guild_permissions.administrator:
+        # Generate a unique code for the giveaway
+        giveaway_code = ''.join(random.choices('ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', k=6))
 
-    # Parse duration string to get seconds
-    time_amount, time_unit = duration[:-1], duration[-1]
-    if time_unit == 's':
-        duration_seconds = int(time_amount)
-    elif time_unit == 'm':
-        duration_seconds = int(time_amount) * 60
-    elif time_unit == 'h':
-        duration_seconds = int(time_amount) * 3600
-    elif time_unit == 'd':
-        duration_seconds = int(time_amount) * 86400
+        # Parse duration string to get seconds
+        time_amount, time_unit = duration[:-1], duration[-1]
+        if time_unit == 's':
+            duration_seconds = int(time_amount)
+        elif time_unit == 'm':
+            duration_seconds = int(time_amount) * 60
+        elif time_unit == 'h':
+            duration_seconds = int(time_amount) * 3600
+        elif time_unit == 'd':
+            duration_seconds = int(time_amount) * 86400
+        else:
+            await ctx.send("Invalid duration format. Use 's' for seconds, 'm' for minutes, 'h' for hours, 'd' for days.")
+            return
+
+        # Store the giveaway message ID
+        await ctx.send(f"Giveaway Code: {giveaway_code}")  # Send giveaway code first
+
+        # Create embed for the giveaway
+        embed = discord.Embed(title=f"🎉 Giveaway: {prize}", description=f"React with 🎉 to enter!\nDuration: {duration}", color=0x00ff00)
+        
+        # Calculate end time and round to nearest second
+        end_time = datetime.datetime.utcnow() + datetime.timedelta(seconds=duration_seconds)
+        end_time = end_time.replace(microsecond=0)
+        
+        embed.set_footer(text=f"Giveaway ends at {end_time} UTC")
+        message = await ctx.send(embed=embed)
+        
+        # Add reaction to the message
+        await message.add_reaction("🎉")
+
+        giveaways[giveaway_code] = {
+            'prize': prize,
+            'end_time': end_time,
+            'participants': [],
+            'message_id': message.id  # Storing the message ID here
+        }
+
+        # Start a task to check for the end of the giveaway
+        await end_giveaway(giveaway_code, message)
     else:
-        await ctx.send("Invalid duration format. Use 's' for seconds, 'm' for minutes, 'h' for hours, 'd' for days.")
-        return
-
-    # Store the giveaway message ID
-    await ctx.send(f"Giveaway Code: {giveaway_code}")  # Send giveaway code first
-
-    # Create embed for the giveaway
-    embed = discord.Embed(title=f"🎉 Giveaway: {prize}", description=f"React with 🎉 to enter!\nDuration: {duration}", color=0x00ff00)
-    
-    # Calculate end time and round to nearest second
-    end_time = datetime.datetime.utcnow() + datetime.timedelta(seconds=duration_seconds)
-    end_time = end_time.replace(microsecond=0)
-    
-    embed.set_footer(text=f"Giveaway ends at {end_time} UTC")
-    message = await ctx.send(embed=embed)
-    
-    # Add reaction to the message
-    await message.add_reaction("🎉")
-
-    giveaways[giveaway_code] = {
-        'prize': prize,
-        'end_time': end_time,
-        'participants': [],
-        'message_id': message.id  # Storing the message ID here
-    }
-
-    # Start a task to check for the end of the giveaway
-    await end_giveaway(giveaway_code, message)
+        await ctx.reply("You do not have permission to run this command.")
 
 @bot.command(help="Reroll the winner of a giveaway. Usage: .reroll <giveaway_code>")
 async def reroll(ctx, giveaway_code):
@@ -1481,40 +1484,41 @@ async def send_console_message(ctx):
             myLogger.warning("Invalid role ID or insufficient permissions")
 
 
-@bot.command(name='a-role', help="Add roles to a selected user.")
-async def add_role(ctx, member: Union[discord.Member, str], *roles):
+@bot.command(name='a-role', help="Add roles to a specified user.")
+async def add_role(ctx, member: discord.Member, *roles):
     # Check if the user invoking the command has the necessary permissions
     if ctx.author.guild_permissions.manage_roles:
-        # Check if the member parameter is set to 'all'
-        if isinstance(member, str) and member.lower() == 'all':
-            # Iterate over all members and add the specified roles
-            for guild_member in ctx.guild.members:
-                for role_name in roles:
-                    # Check if the role exists in the server
-                    role = discord.utils.get(ctx.guild.roles, name=role_name)
-                    if role:
-                        # Avoid adding the @everyone role
-                        if role != ctx.guild.default_role:
-                            if role not in guild_member.roles:
-                                await guild_member.add_roles(role)
-            await ctx.send(f"{role} added to all members.")
+        # If the roles parameter includes 'all', add all roles to the specified user
+        if 'all' in roles:
+            for role in ctx.guild.roles:
+                if role != ctx.guild.default_role and role != ctx.guild.me.top_role:
+                    await member.add_roles(role)
+            await ctx.send(f"All roles added to {member.mention}.")
             return
 
-        # If the member parameter is a specific member, proceed with adding roles to that member
+        # If the role parameter is 'all', add all roles to the user
+        elif 'all' in member.roles:
+            for role in ctx.guild.roles:
+                if role != ctx.guild.default_role and role != ctx.guild.me.top_role:
+                    await member.add_roles(role)
+            await ctx.send(f"All roles added to {member.mention}.")
+            return
+
+        # Proceed with adding specified roles to the user
         for role_name in roles:
-            # Check if the role exists in the server
             role = discord.utils.get(ctx.guild.roles, name=role_name)
             if role:
-                if isinstance(member, discord.Member):
-                    if role not in member.roles:
-                        await member.add_roles(role)
+                if role not in member.roles:
+                    await member.add_roles(role)
                 else:
-                    await ctx.send("Invalid member provided.")
+                    await ctx.send(f"{member.mention} already has the role {role_name}.")
             else:
                 await ctx.send(f"Role '{role_name}' does not exist.")
     else:
-        # If the user doesn't have the necessary permissions, reply with an error message
         await ctx.reply("You don't have permission to use this command.")
+
+
+
 
 
 @bot.command(help="Set the channel for role change logs.")
