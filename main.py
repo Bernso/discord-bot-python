@@ -215,10 +215,9 @@ async def on_raw_reaction_add(payload):
 
 @bot.event
 async def on_ready():
-    myLogger.info(f'{bot.user} is now running!')
     myLogger.info(f'Logged in as {bot.user.name}')
     myLogger.info(f'Bot ID: {bot.user.id}')
-    myLogger.info('------')
+    myLogger.info(' ')
 
     
     await bot.change_presence(status=discord.Status.dnd,
