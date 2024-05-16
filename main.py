@@ -216,7 +216,11 @@ async def on_raw_reaction_add(payload):
 @bot.event
 async def on_ready():
     myLogger.info(f'{bot.user} is now running!')
+    myLogger.info(f'Logged in as {bot.user.name}')
+    myLogger.info(f'Bot ID: {bot.user.id}')
+    myLogger.info('------')
 
+    
     await bot.change_presence(status=discord.Status.dnd,
                               activity=discord.Activity(type=discord.ActivityType.listening, name="Erika"))
 
@@ -1409,40 +1413,33 @@ async def send_console_embed(ctx):
             myLogger.warning("Invalid insufficient permissions")
 
 
-@bot.command(name='r-role', help="Remove roles from a selected user.")
-async def remove_role(ctx, member: Union[discord.Member, str], *roles):
-    # Check if the user invoking the command has the necessary permissions
-    if ctx.author.guild_permissions.manage_roles:
-        # Check if the member parameter is set to 'all'
-        if isinstance(member, str) and member.lower() == 'all':
-            # Iterate over all members and remove the specified roles
-            for guild_member in ctx.guild.members:
-                for role_name in roles:
-                    # Check if the role exists in the server
-                    role = discord.utils.get(ctx.guild.roles, name=role_name)
-                    if role:
-                        if role in guild_member.roles:
-                            await guild_member.remove_roles(role)
-            await ctx.send(f"{role} removed from all members.")
-            return
-
-        # If the member parameter is a specific member, proceed with removing roles from that member
+@bot.command(name='r-role', help="Remove roles from a specified user.")
+@commands.has_permissions(manage_roles=True)
+async def remove_roles(ctx, member: discord.Member, *roles: str):
+    EXCLUDED_ROLE_IDS = ['1234086390073917453', '1240747528580759773']
+    if 'all' in roles:
+        # Fetch all roles from the guild (server) excluding specified roles
+        roles_to_remove = [role for role in member.roles if role != ctx.guild.default_role and str(role.id) not in EXCLUDED_ROLE_IDS]
+    else:
+        # Fetch only the roles specified by the user
+        roles_to_remove = []
         for role_name in roles:
-            # Check if the role exists in the server
             role = discord.utils.get(ctx.guild.roles, name=role_name)
             if role:
-                if isinstance(member, discord.Member):
-                    if role in member.roles:
-                        await member.remove_roles(role)
-                    else:
-                        await ctx.send(f"{member.name} doesn't have the role {role}.")
-                else:
-                    await ctx.send("Invalid member provided.")
+                if str(role.id) not in EXCLUDED_ROLE_IDS:
+                    roles_to_remove.append(role)
             else:
-                await ctx.send(f"Role '{role_name}' does not exist.")
-    else:
-        # If the user doesn't have the necessary permissions, reply with an error message
-        await ctx.reply("You don't have permission to use this command.")
+                await ctx.send(f"Role '{role_name}' not found.")
+                return
+    
+    # Try to remove specified roles
+    try:
+        await member.remove_roles(*roles_to_remove)
+        await ctx.send(f"Roles have been removed from {member.mention}.")
+    except discord.Forbidden:
+        await ctx.send("I do not have permission to manage roles. Make sure my role is higher than the roles you are trying to remove.")
+    except discord.HTTPException as e:
+        await ctx.send(f"Failed to remove roles: {e}")
 
 
 @bot.command(name='NEIN', help="NEIN")
@@ -1485,38 +1482,27 @@ async def send_console_message(ctx):
 
 
 @bot.command(name='a-role', help="Add roles to a specified user.")
-async def add_role(ctx, member: discord.Member, *roles):
-    # Check if the user invoking the command has the necessary permissions
-    if ctx.author.guild_permissions.manage_roles:
-        # If the roles parameter includes 'all', add all roles to the specified user
-        if 'all' in roles:
-            for role in ctx.guild.roles:
-                if role != ctx.guild.default_role and role != ctx.guild.me.top_role:
-                    await member.add_roles(role)
-            await ctx.send(f"All roles added to {member.mention}.")
-            return
-
-        # If the role parameter is 'all', add all roles to the user
-        elif 'all' in member.roles:
-            for role in ctx.guild.roles:
-                if role != ctx.guild.default_role and role != ctx.guild.me.top_role:
-                    await member.add_roles(role)
-            await ctx.send(f"All roles added to {member.mention}.")
-            return
-
-        # Proceed with adding specified roles to the user
+@commands.has_permissions(manage_roles=True)
+async def add_roles(ctx, member: discord.Member, *roles: str):
+    excludedRoles = ['1234086390073917453', '1240747528580759773']
+    if 'all' in roles:
+        # Fetch all roles from the guild (server) excluding specified roles
+        roles_to_add = [role for role in ctx.guild.roles if role != ctx.guild.default_role and role.name not in excludedRoles]
+    else:
+        # Fetch only the roles specified by the user
+        roles_to_add = []
         for role_name in roles:
             role = discord.utils.get(ctx.guild.roles, name=role_name)
             if role:
-                if role not in member.roles:
-                    await member.add_roles(role)
-                else:
-                    await ctx.send(f"{member.mention} already has the role {role_name}.")
+                roles_to_add.append(role)
             else:
-                await ctx.send(f"Role '{role_name}' does not exist.")
-    else:
-        await ctx.reply("You don't have permission to use this command.")
-
+                await ctx.send(f"Role '{role_name}' not found.")
+                return
+    
+    # Try to add specified role
+    await member.add_roles(*roles_to_add)
+    await ctx.send(f"Roles have been added to {member.mention}.")
+   
 
 
 
